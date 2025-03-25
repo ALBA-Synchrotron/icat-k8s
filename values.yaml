@@ -1,0 +1,120 @@
+global:
+  namespace: "icat-core-test"
+  environment: "test"
+  images:
+    container: "registry.cells.es/docker/payara/micro:6.2025.2-jdk21"
+    initContainer:
+      curl: "registry.cells.es/docker/curlimages/curl:8.12.1"
+      python: "registry.cells.es/docker/python:3.12.9-bullseye"
+  artifacts:
+    repositoryURL: "https://misdockerprod02.cells.es/nexus/repository/icat-alba/org/icatproject"
+    databaseConnector:
+      name: "mariadb-java-client"
+      version: "3.5.2"
+  setupPropertiesSecretName: "icat-core-setup-properties"
+  runPropertiesConfigMapName: "icat-core-run-properties"
+
+elasticAPM:
+  enabled: true
+  version: "7.16.0"
+  apm:
+    serverUrl: "https\\://kubeelasticmis.cells.es/apm"
+    apmLogSending: true
+    secretTokenSecretName: "elastic-apm-token"
+
+components:
+  - name: "icat-server"
+    repoKey: "icat.server"
+    version: "6.1.0"
+    replicas: 1
+    secretTokenSecretName: "elastic-apm-token"
+    resources:
+      limits:
+        memory: "12Gi"
+        cpu: "4.0"
+      requests:
+        memory: "6Gi"
+        cpu: "1.0"
+    readinessProbe:
+      httpGet:
+        path: "/ids/ping"
+        port: 8080
+      failureThreshold: 1
+      periodSeconds: 100
+    mountInstrumentStorage: false
+    hasRunProperties: true
+    hasSetupProperties: true
+    includeDatabaseJar: true
+
+
+instrumentStorage:
+  - name: bl01 # NCD-SWEET
+    mountPath: /opt/ids/main/beamlines/bl01
+    readOnly: true
+    nfs:
+      server: beamlines01.cells.es
+      path: /beamlines/bl01
+      readOnly: true
+  - name: bl11 # MIRAS
+    mountPath: /opt/ids/main/beamlines/bl11
+    readOnly: true
+    nfs:
+      path: /beamlines/bl11
+      server: beamlines01.cells.es
+      readOnly: true
+  - name: bl20 # LOREA
+    mountPath: /opt/ids/main/beamlines/bl20
+    readOnly: true
+    nfs:
+      path: /beamlines/bl20
+      server: beamlines02.cells.es
+      readOnly: true
+  - name: bl24 # CIRCE
+    mountPath: /opt/ids/main/beamlines/bl24
+    readOnly: true
+    nfs:
+      path: /beamlines/bl24
+      server: beamlines02.cells.es
+      readOnly: true
+  - name: bl13 # XALOC
+    mountPath: /opt/ids/main/beamlines/bl13
+    readOnly: true
+    nfs:
+      path: /beamlines/bl13
+      server: beamlines02.cells.es
+      readOnly: true
+  - name: bl16 # NOTOS
+    mountPath: /opt/ids/main/beamlines/bl16
+    readOnly: true
+    nfs:
+      path: /beamlines/bl16
+      server: beamlines02.cells.es
+      readOnly: true
+  - name: bl09 # MISTRAL
+    mountPath: /opt/ids/main/beamlines/bl09
+    readOnly: true
+    nfs:
+      path: /beamlines/bl09
+      server: beamlines01.cells.es
+      readOnly: true
+  - name: bl06 # XAIRA
+    mountPath: /opt/ids/main/beamlines/bl06
+    readOnly: true
+    nfs:
+      path: /instruments/bl06
+      server: ufs.cells.es
+      readOnly: true
+  - name: bl29 # BOREAS
+    mountPath: /opt/ids/main/beamlines/bl29
+    readOnly: true
+    nfs:
+      path: /beamlines/bl29
+      server: beamlines02.cells.es
+      readOnly: true
+  - name: bl31 # FAXTOR
+    mountPath: /opt/ids/main/beamlines/bl31
+    readOnly: true
+    nfs:
+      path: /instruments/bl31
+      server: ufs.cells.es
+      readOnly: true

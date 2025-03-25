@@ -1,0 +1,137 @@
+{{- range $.Values.components }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ $.Values.global.namespace }}
+  name: icat-core-deployment-{{ .name}}-{{ $.Values.global.environment }}
+  labels:
+    app: icat
+    env: {{ $.Values.global.environment }}
+    component: {{ .name }}
+spec:
+  replicas: {{ .replicas }}
+  selector:
+    matchLabels:
+      app: icat
+      env: {{ $.Values.global.environment }}
+      component: {{ .name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: icat
+        env: {{ $.Values.global.environment }}
+        component: {{ .name }}
+    spec:
+      priorityClassName: icat-priority
+      initContainers:
+        {{- if .includeDatabaseJar }}
+        - name: init-{{ .name}}-{{ $.Values.global.environment }}-fetch-db-connector
+          image: {{ $.Values.global.images.initContainer.curl }}
+          command:
+            - "curl"
+            - "-o"
+            - "/opt/payara/libs/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar"
+            - "{{ $.Values.global.artifacts.repositoryURL }}/{{ $.Values.global.artifacts.databaseConnector.name }}/{{ $.Values.global.artifacts.databaseConnector.version }}/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar"
+          volumeMounts:
+            - name: shared-libs-dir
+              mountPath: /opt/payara/libs
+        {{- end }}
+        - name: init-{{ .name}}-{{ $.Values.global.environment }}-fetch-war
+          image: {{ $.Values.global.images.initContainer.curl }}
+          command:
+            - "curl"
+            - "-o"
+            - "/opt/payara/deployments/{{.repoKey}}-{{.version}}.war"
+            - "{{ $.Values.global.artifacts.repositoryURL }}/{{ .repoKey }}/{{ .version }}/{{ .repoKey }}-{{ .version }}.war"
+          volumeMounts:
+            - name: shared-deployments-dir
+              mountPath: /opt/payara/deployments
+              
+      containers:
+        - image: {{ $.Values.global.images.container }}
+          imagePullPolicy: Always
+          {{- if $.Values.elasticAPM.enabled }}
+          env:
+            - name: ELASTIC_APM_LOG_SENDING
+              value:  "{{ $.Values.elasticAPM.apm.apmLogSending }}"
+            - name: ELASTIC_APM_ENVIRONMENT
+              value: {{ $.Values.global.environment }}
+            - name: APM_SERVER_URL
+              value: {{ $.Values.elasticAPM.apm.serverUrl }}
+            - name: APM_SERVICE_NAME
+              value: icat-core-{{ .name}}-{{ $.Values.global.environment }}
+            - name: ELASTIC_APM_SECRET_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.elasticAPM.apm.secretTokenSecretName }}
+                  key: token
+            {{- end }}
+          name: icat-core-{{ .name}}-{{ $.Values.global.environment }}
+          ports:
+            - containerPort: 8080
+          {{- if .resources }}
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+          {{- end }}
+          {{- if .readinessProbe }}
+          readinessProbe:
+            {{- toYaml .readinessProbe | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- if .mountInstrumentStorage }}
+          {{- range $.Values.instrumentStorage }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+          {{- end }}
+          {{- if .hasSetupProperties }}
+          - name: setup-properties
+            mountPath: /opt/payara/deployments/setup.properties
+            subPath: setup.properties
+          {{- end }}
+          {{- if .hasRunProperties }}
+          - name: run-properties
+            mountPath: /opt/payara/deployments/run.properties
+            subPath: run.properties
+          {{- end }}
+          - name: shared-deployments-dir
+            mountPath: /opt/payara/deployments/
+          - name: shared-libs-dir
+            mountPath: /opt/payara/libs/
+      restartPolicy: Always
+      volumes:
+        - name: shared-deployments-dir
+          emptyDir: {}
+        - name: shared-libs-dir
+          emptyDir: {}
+        {{- if .hasSetupProperties }}
+        - name: setup-properties
+          secret:
+            secretName: {{ $.Values.global.setupPropertiesSecretName }}-{{ $.Values.global.environment }}
+            items:
+              - key: {{.name}}
+                path: setup.properties
+        {{- end}}
+        {{- if .hasRunProperties }}
+        - name: run-properties
+          configMap:
+            name: {{ $.Values.global.runPropertiesConfigMapName }}-{{ $.Values.global.environment }}
+            items:
+              - key: {{.name}}
+                path: run.properties
+        {{- end }}
+        {{- if .mountInstrumentStorage }}
+        {{- range $.Values.instrumentStorage }}
+        - name: {{ .name }}
+        {{- if .nfs }}
+          nfs:
+          {{- toYaml .nfs | nindent 12 }}
+          {{- end }}
+        {{- end }}
+        {{- end }}
+status: {}
+---
+{{- end }}
