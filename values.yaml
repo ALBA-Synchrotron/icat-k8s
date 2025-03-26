@@ -7,7 +7,7 @@ global:
       # Must be image running as root (need to install curl)
       python: "registry.cells.es/docker/python:3.12.9-bullseye"
   artifacts:
-    repositoryURL: "https://misdockerprod02.cells.es/nexus/repository/icat-alba/org/icatproject"
+    repositoryURL: "https://misdockerprod02.cells.es/nexus/repository/icat-alba"
     databaseConnector:
       name: "mariadb-java-client"
       version: "3.5.2"
@@ -17,35 +17,33 @@ global:
 
 elasticAPM:
   enabled: true
-  version: "7.16.0"
+  version: "1.50.0"
   apm:
-    serverUrl: "https\\://kubeelasticmis.cells.es/apm"
+    serverUrl: "https://kubeelasticmis.cells.es/apm"
     apmLogSending: true
     secretTokenSecretName: "elastic-apm-token"
 
 components:
-  - name: "icat-server"
-    repoKey: "icat.server"
-    version: "6.1.0"
+  # authn.anon -- ANONYMOUS AUTHENTICATION COMPONENT
+  - name: "authn-anon"
+    repoKey: "authn.anon"
+    version: "3.0.0"
     replicas: 1
     secretTokenSecretName: "elastic-apm-token"
     resources:
-      limits:
-        memory: "12Gi"
-        cpu: "4.0"
       requests:
-        memory: "6Gi"
-        cpu: "1.0"
+        memory: "500Mi"
     readinessProbe:
       httpGet:
-        path: "/ids/ping"
+        path: "/authn.anon/version"
         port: 8080
       failureThreshold: 1
       periodSeconds: 100
     mountInstrumentStorage: false
     hasRunProperties: true
     hasSetupProperties: true
-    includeDatabaseJar: true
+    includeDatabaseJar: false
+
 
 
 instrumentStorage:

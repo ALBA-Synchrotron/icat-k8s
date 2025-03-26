@@ -4,7 +4,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: {{ $.Values.global.namespace }}
-  name: icat-core-deployment-{{ .name}}-{{ $.Values.global.environment }}
+  name: icat-core-{{ .name}}-deployment-{{ $.Values.global.environment }}
   labels:
     app: icat
     env: {{ $.Values.global.environment }}
@@ -32,28 +32,59 @@ spec:
             - "sh"
             - "-c"
             - |
-              curl -o /opt/payara/deployments/{{.repoKey}}-{{.version}}.war {{ $.Values.global.artifacts.repositoryURL }}/{{ .repoKey }}/{{ .version }}/{{ .repoKey }}-{{ .version }}.war && \
+              {{- if $.Values.elasticAPM.enabled }}
+              curl -o /opt/payara/libs/elastic-apm-agent.jar {{ $.Values.global.artifacts.repositoryURL }}/elastic/elastic-apm-agent/{{ $.Values.elasticAPM.version }}/elastic-apm-agent-{{ $.Values.elasticAPM.version }}.jar && \
+              {{- end }}
+              curl -o /opt/payara/deployments/{{.repoKey}}-{{.version}}.war {{ $.Values.global.artifacts.repositoryURL }}/org/icatproject/{{ .repoKey }}/{{ .version }}/{{ .repoKey }}-{{ .version }}.war && \
               {{- if .includeDatabaseJar }}
-              curl -o /opt/payara/libs/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar {{ $.Values.global.artifacts.repositoryURL }}/{{ $.Values.global.artifacts.databaseConnector.name }}/{{ $.Values.global.artifacts.databaseConnector.version }}/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar && \
+              curl -o /opt/payara/libs/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar {{ $.Values.global.artifacts.repositoryURL }}/org/icatproject/{{ $.Values.global.artifacts.databaseConnector.name }}/{{ $.Values.global.artifacts.databaseConnector.version }}/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar && \
               {{- end }}
               curl -L -o /opt/payara/deployments/icat_k8s_setup_generator.py {{ $.Values.global.initScriptsURL }}/icat_k8s_setup_generator.py && \
-              curl -L -o /opt/payara/deployments/icat_k8s_setup_utils.py {{ $.Values.global.artifacts.repositoryURL }}/icat_k8s_setup_utils.py && \
+              curl -L -o /opt/payara/deployments/icat_k8s_setup_utils.py {{ $.Values.global.initScriptsURL }}/icat_k8s_setup_utils.py && \
+              cd /opt/payara/deployments/ && \
               python /opt/payara/deployments/icat_k8s_setup_generator.py --component {{ .repoKey }}
           volumeMounts:
             - name: shared-deployments-dir
               mountPath: /opt/payara/deployments
             - name: shared-libs-dir
               mountPath: /opt/payara/libs
+            {{- if .hasSetupProperties }}
+            - name: setup-properties
+              mountPath: /opt/payara/deployments/setup.properties
+              subPath: setup.properties
+            {{- end }}
+            {{- if .hasRunProperties }}
+            - name: run-properties
+              mountPath: /opt/payara/deployments/run.properties
+              subPath: run.properties
+            {{- end }}
       containers:
         - image: {{ $.Values.global.images.container }}
           imagePullPolicy: Always
-          {{- if $.Values.elasticAPM.enabled }}
+          command:
+            - "java"
+            {{- if $.Values.elasticAPM.enabled }}
+            - "-javaagent:/opt/payara/libs/elastic-apm-agent.jar"
+            - "-Delastic.apm.service_name=icat-core-{{ .name}}-{{ $.Values.global.environment }}"
+            - "-Delastic.apm.application_packages=es.cells.icat.authn_alba,org.icatproject.authn_anon,org.icatproject.authn_db,org.icatproject.icat_oaipmh,org.icatproject.exposed,org.icatproject.ids"
+            {{- end }}
+            - "-jar"
+            - "/opt/payara/payara-micro.jar"
+            - "--addlibs"
+            - "/opt/payara/libs/"
+            - "--postbootcommandfile"
+            - "/opt/payara/deployments/post_boot_asadmin_commands"
+            - "--deploydir"
+            - "/opt/payara/deployments/"
           env:
+            - name: DASH_PWD
+              value: "Present Working Dilemma"
+            {{- if $.Values.elasticAPM.enabled }}
             - name: ELASTIC_APM_LOG_SENDING
               value:  "{{ $.Values.elasticAPM.apm.apmLogSending }}"
             - name: ELASTIC_APM_ENVIRONMENT
               value: {{ $.Values.global.environment }}
-            - name: APM_SERVER_URL
+            - name: ELASTIC_APM_SERVER_URL
               value: {{ $.Values.elasticAPM.apm.serverUrl }}
             - name: APM_SERVICE_NAME
               value: icat-core-{{ .name}}-{{ $.Values.global.environment }}
