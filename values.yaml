@@ -4,7 +4,7 @@ global:
   images:
     container: "registry.cells.es/docker/payara/micro:6.2025.2-jdk21"
     initContainer:
-      curl: "registry.cells.es/docker/curlimages/curl:8.12.1"
+      # Must be image running as root (need to install curl)
       python: "registry.cells.es/docker/python:3.12.9-bullseye"
   artifacts:
     repositoryURL: "https://misdockerprod02.cells.es/nexus/repository/icat-alba/org/icatproject"
@@ -13,6 +13,7 @@ global:
       version: "3.5.2"
   setupPropertiesSecretName: "icat-core-setup-properties"
   runPropertiesConfigMapName: "icat-core-run-properties"
+  initScriptsURL: "https://git.cells.es/mis-devops/icat-public/icat-k8s/-/raw/master/setup_scripts"
 
 elasticAPM:
   enabled: true

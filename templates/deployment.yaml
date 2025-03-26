@@ -26,29 +26,24 @@ spec:
     spec:
       priorityClassName: icat-priority
       initContainers:
-        {{- if .includeDatabaseJar }}
-        - name: init-{{ .name}}-{{ $.Values.global.environment }}-fetch-db-connector
-          image: {{ $.Values.global.images.initContainer.curl }}
+        - name: init-{{ .name }}-{{ $.Values.global.environment }}-setup
+          image: {{ $.Values.global.images.initContainer.python }}
           command:
-            - "curl"
-            - "-o"
-            - "/opt/payara/libs/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar"
-            - "{{ $.Values.global.artifacts.repositoryURL }}/{{ $.Values.global.artifacts.databaseConnector.name }}/{{ $.Values.global.artifacts.databaseConnector.version }}/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar"
-          volumeMounts:
-            - name: shared-libs-dir
-              mountPath: /opt/payara/libs
-        {{- end }}
-        - name: init-{{ .name}}-{{ $.Values.global.environment }}-fetch-war
-          image: {{ $.Values.global.images.initContainer.curl }}
-          command:
-            - "curl"
-            - "-o"
-            - "/opt/payara/deployments/{{.repoKey}}-{{.version}}.war"
-            - "{{ $.Values.global.artifacts.repositoryURL }}/{{ .repoKey }}/{{ .version }}/{{ .repoKey }}-{{ .version }}.war"
+            - "sh"
+            - "-c"
+            - |
+              curl -o /opt/payara/deployments/{{.repoKey}}-{{.version}}.war {{ $.Values.global.artifacts.repositoryURL }}/{{ .repoKey }}/{{ .version }}/{{ .repoKey }}-{{ .version }}.war && \
+              {{- if .includeDatabaseJar }}
+              curl -o /opt/payara/libs/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar {{ $.Values.global.artifacts.repositoryURL }}/{{ $.Values.global.artifacts.databaseConnector.name }}/{{ $.Values.global.artifacts.databaseConnector.version }}/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar && \
+              {{- end }}
+              curl -L -o /opt/payara/deployments/icat_k8s_setup_generator.py {{ $.Values.global.initScriptsURL }}/icat_k8s_setup_generator.py && \
+              curl -L -o /opt/payara/deployments/icat_k8s_setup_utils.py {{ $.Values.global.artifacts.repositoryURL }}/icat_k8s_setup_utils.py && \
+              python /opt/payara/deployments/icat_k8s_setup_generator.py --component {{ .repoKey }}
           volumeMounts:
             - name: shared-deployments-dir
               mountPath: /opt/payara/deployments
-              
+            - name: shared-libs-dir
+              mountPath: /opt/payara/libs
       containers:
         - image: {{ $.Values.global.images.container }}
           imagePullPolicy: Always

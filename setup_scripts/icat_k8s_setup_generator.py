@@ -1,7 +1,7 @@
 import os
 import sys
 
-from icat_k8s_setup_utils import get_arguments, register_db, get_db_parameters, create_jms_resource, get_properties, \
+from icat_k8s_setup_utils import get_arguments, register_db, create_jms_resource, get_properties, \
     deploy, get_setup_parameters
 
 args: dict = get_arguments()
@@ -26,7 +26,7 @@ match component:
 
         setup_props: dict = get_setup_parameters("setup.properties",
                                                  ["db.driver", "db.url", "db.username", "db.password", "secure", "home",
-                                                  "container", "port", "container", "db.logging"])
+                                                  "container", "port", "container"])
         db_commands: list = register_db(setup_props, "icat")
         asadmin_commands.extend(db_commands)
 
@@ -51,3 +51,4 @@ match component:
 
 with open("post_boot_asadmin_commands", "w") as f:
     f.write("\n".join(asadmin_commands))
+    f.write("\n")

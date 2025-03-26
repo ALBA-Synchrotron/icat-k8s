@@ -34,10 +34,10 @@ def register_db(db_params: dict, db_name: str) -> list:
     """
     ret_commands: list = []
 
-    db_url: str = db_params["db_url"]
-    db_username: str = db_params["db_username"]
-    db_password: str = db_params["db_password"]
-    db_driver: str = db_params["db_driver"]
+    db_url: str = db_params["db.url"]
+    db_username: str = db_params["db.username"]
+    db_password: str = db_params["db.password"]
+    db_driver: str = db_params["db.driver"]
 
     d_props: str = f"user={db_username}:"
     d_props += f"password={db_password}:"
