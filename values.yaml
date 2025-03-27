@@ -13,6 +13,7 @@ global:
       version: "3.5.2"
   setupPropertiesSecretName: "icat-core-setup-properties"
   runPropertiesConfigMapName: "icat-core-run-properties"
+  logbackConfigMapName: "icat-core-logback"
   initScriptsURL: "https://git.cells.es/mis-devops/icat-public/icat-k8s/-/raw/master/setup_scripts"
 
 elasticAPM:
@@ -42,8 +43,28 @@ components:
     mountInstrumentStorage: false
     hasRunProperties: true
     hasSetupProperties: true
+    hasLogback: false
     includeDatabaseJar: false
-
+  # authn.db -- DATABASE AUTHENTICATION COMPONENT
+  - name: "authn-db"
+    repoKey: "authn.db"
+    version: "3.0.0"
+    replicas: 1
+    secretTokenSecretName: "elastic-apm-token"
+    resources:
+      requests:
+        memory: "500Mi"
+    readinessProbe:
+      httpGet:
+        path: "/authn.db/version"
+        port: 8080
+      failureThreshold: 1
+      periodSeconds: 100
+    mountInstrumentStorage: false
+    hasRunProperties: true
+    hasSetupProperties: true
+    hasLogback: true
+    includeDatabaseJar: true
 
 
 instrumentStorage:

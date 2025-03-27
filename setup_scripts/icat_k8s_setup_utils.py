@@ -144,10 +144,12 @@ def fix_persistence_xml(container, target, logging):
             fi.write(doc.toxml())
 
 
-def deploy(deployment_order: int = 100, files=None, jms_topic_connection_factory=None,
-           target=None, logging=None, secure=False, port: int = 8080) -> None:
+def deploy(files=None, jms_topic_connection_factory=None,
+           target=None, logging=None, secure=False) -> None:
     if not jms_topic_connection_factory: jms_topic_connection_factory = 'jms/__defaultConnectionFactory'
     if files is None: files = []
+
+    print("Files: ", files)
 
     war: str = unzip_war()
 
@@ -158,6 +160,7 @@ def deploy(deployment_order: int = 100, files=None, jms_topic_connection_factory
         except:
             pass
         shutil.copy(src, dir)
+        print(f"Copying {src} to {dir}")
 
     f = os.path.join("unzipped", "WEB-INF", "web.xml")
     if os.path.exists(f):
