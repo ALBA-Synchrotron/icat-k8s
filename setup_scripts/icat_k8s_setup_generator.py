@@ -90,7 +90,7 @@ match component:
                 sys.exit(
                     f"data.configurations include '{v}' but 'data.{v}.metadataPrefixes' is not defined in run.properties")
 
-            data_configuration_metadata_prefixes: list = run_props["data.{v}.metadataPrefixes"].split()
+            data_configuration_metadata_prefixes: list = run_props[f"data.{v}.metadataPrefixes"].split()
             if "oai_dc" not in data_configuration_metadata_prefixes:
                 sys.exit(f"Support for 'oai_dc' is missing under 'data.{v}.metadataPrefixes' in run.properties")
             for w in data_configuration_metadata_prefixes:

@@ -15,6 +15,7 @@ spec:
     matchLabels:
       app: icat
       env: {{ $.Values.global.environment }}
+      tier: core
       component: {{ .name }}
   strategy: {}
   template:
@@ -22,6 +23,7 @@ spec:
       labels:
         app: icat
         env: {{ $.Values.global.environment }}
+        tier: core
         component: {{ .name }}
     spec:
       priorityClassName: icat-priority

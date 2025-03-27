@@ -7,6 +7,7 @@ metadata:
   labels:
     app: icat
     env: {{ $.Values.global.environment }}
+    tier: core
     component: {{ .name }}
   name: icat-core-{{ .name}}-service-{{ $.Values.global.environment }}
 spec:
@@ -14,10 +15,10 @@ spec:
     - name: "8080"
       port: 8080
       targetPort: 8080
-
   selector:
     app: icat
     env: {{ $.Values.global.environment }}
+    tier: core
     component: {{ .name }}
 status:
   loadBalancer: {}
