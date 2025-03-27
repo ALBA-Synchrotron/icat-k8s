@@ -6,6 +6,7 @@ global:
     initContainer:
       # Must be image running as root (need to install curl)
       python: "registry.cells.es/docker/python:3.12.9-bullseye"
+      curl: "registry.cells.es/docker/curlimages/curl:8.12.1"
   artifacts:
     repositoryURL: "https://misdockerprod02.cells.es/nexus/repository/icat-alba"
     databaseConnector:
@@ -89,27 +90,6 @@ components:
     hasLogback: false
     hasExternalXSLT: false
     includeDatabaseJar: false
-# authn.oidc -- OPENID CONNECT AUTHENTICATION COMPONENT
-  - name: "authn-oidc"
-    repoKey: "authn.oidc"
-    version: "2.0.1"
-    replicas: 1
-    secretTokenSecretName: "elastic-apm-token"
-    resources:
-      requests:
-        memory: "500Mi"
-    readinessProbe:
-      httpGet:
-        path: "/authn.oidc/version"
-        port: 8080
-      failureThreshold: 1
-      periodSeconds: 100
-    mountInstrumentStorage: false
-    hasRunProperties: true
-    hasSetupProperties: true
-    hasLogback: false
-    hasExternalXSLT: false
-    includeDatabaseJar: false
   # authn.oaipmh -- OAI-PMH (Open Archive Initiative-Protocol for Metadata Harvesting) COMPONENT
   - name: "icat-oaipmh"
     repoKey: "icat.oaipmh"
@@ -121,7 +101,7 @@ components:
         memory: "500Mi"
     readinessProbe:
       httpGet:
-        path: "/authn.oaipmh/version"
+        path: "/oaipmh/version"
         port: 8080
       failureThreshold: 1
       periodSeconds: 100
@@ -130,6 +110,39 @@ components:
     hasSetupProperties: true
     hasExternalXSLT: true
     includeDatabaseJar: false
+    startupDependencies:
+      - name: "icat-server"
+        path: "/icat.server/version"
+  - name: "icat-server"
+    repoKey: "icat.server"
+    version: "6.1.0"
+    replicas: 1
+    secretTokenSecretName: "elastic-apm-token"
+    resources:
+      limits:
+        memory: "12Gi"
+        cpu: "4.0"
+      requests:
+        memory: "6Gi"
+        cpu: "1.0"
+    readinessProbe:
+      httpGet:
+        path: "/ids/ping"
+        port: 8080
+      failureThreshold: 1
+      periodSeconds: 100
+    mountInstrumentStorage: false
+    hasRunProperties: true
+    hasSetupProperties: true
+    hasLogback: false
+    includeDatabaseJar: true
+    startupDependencies:
+      - name: "authn-db"
+        path: "/authn.db/version"
+      - name: "authn-anon"
+        path: "/authn.anon/version"
+      - name: "authn-oidc"
+        path: "/authn.oidc/version"
 
 instrumentStorage:
   - name: bl01 # NCD-SWEET

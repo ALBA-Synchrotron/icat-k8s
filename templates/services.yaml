@@ -9,6 +9,7 @@ metadata:
     env: {{ $.Values.global.environment }}
     tier: core
     component: {{ .name }}
+    release: {{ $.Release.Name }}
   name: icat-core-{{ .name}}-service-{{ $.Values.global.environment }}
 spec:
   ports:
@@ -20,6 +21,7 @@ spec:
     env: {{ $.Values.global.environment }}
     tier: core
     component: {{ .name }}
+    release: {{ $.Release.Name }}
 status:
   loadBalancer: {}
 {{- end }}

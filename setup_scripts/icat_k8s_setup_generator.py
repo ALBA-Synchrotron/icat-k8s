@@ -142,7 +142,7 @@ match component:
 
         setup_props: dict = get_setup_parameters("setup.properties",
                                                  ["db.driver", "db.url", "db.username", "db.password", "secure", "home",
-                                                  "container", "port", "container"])
+                                                  "container", "port"])
         db_commands: list = register_db(setup_props, "icat")
         asadmin_commands.extend(db_commands)
 
