@@ -122,6 +122,10 @@ spec:
             mountPath: /opt/payara/deployments/
           - name: shared-libs-dir
             mountPath: /opt/payara/libs/
+          {{- if .hasExternalXSLT }}
+          - name: external-xslt
+            mountPath: /opt/payara/xslt/
+          {{- end}}
       restartPolicy: Always
       volumes:
         - name: shared-deployments-dir
@@ -151,6 +155,11 @@ spec:
             items:
             - key: {{.name}}
               path: logback.xml
+        {{- end }}
+        {{- if .hasExternalXSLT }}
+        - name: external-xslt
+          configMap:
+            name: {{ $.Values.global.oaipmhXSLTConfigMapName }}-{{ $.Values.global.environment }}
         {{- end }}
         {{- if .mountInstrumentStorage }}
         {{- range $.Values.instrumentStorage }}

@@ -13,6 +13,7 @@ global:
       version: "3.5.2"
   setupPropertiesSecretName: "icat-core-setup-properties"
   runPropertiesConfigMapName: "icat-core-run-properties"
+  oaipmhXSLTConfigMapName: "icat-core-oaipmh-xslt"
   logbackConfigMapName: "icat-core-logback"
   initScriptsURL: "https://git.cells.es/mis-devops/icat-public/icat-k8s/-/raw/master/setup_scripts"
 
@@ -44,6 +45,7 @@ components:
     hasRunProperties: true
     hasSetupProperties: true
     hasLogback: false
+    hasExternalXSLT: false
     includeDatabaseJar: false
   # authn.db -- DATABASE AUTHENTICATION COMPONENT
   - name: "authn-db"
@@ -64,8 +66,70 @@ components:
     hasRunProperties: true
     hasSetupProperties: true
     hasLogback: true
+    hasExternalXSLT: false
     includeDatabaseJar: true
-
+    # authn.oidc -- OPENID CONNECT AUTHENTICATION COMPONENT
+  - name: "authn-oidc"
+    repoKey: "authn.oidc"
+    version: "2.0.1"
+    replicas: 1
+    secretTokenSecretName: "elastic-apm-token"
+    resources:
+      requests:
+        memory: "500Mi"
+    readinessProbe:
+      httpGet:
+        path: "/authn.oidc/version"
+        port: 8080
+      failureThreshold: 1
+      periodSeconds: 100
+    mountInstrumentStorage: false
+    hasRunProperties: true
+    hasSetupProperties: true
+    hasLogback: false
+    hasExternalXSLT: false
+    includeDatabaseJar: false
+# authn.oidc -- OPENID CONNECT AUTHENTICATION COMPONENT
+  - name: "authn-oidc"
+    repoKey: "authn.oidc"
+    version: "2.0.1"
+    replicas: 1
+    secretTokenSecretName: "elastic-apm-token"
+    resources:
+      requests:
+        memory: "500Mi"
+    readinessProbe:
+      httpGet:
+        path: "/authn.oidc/version"
+        port: 8080
+      failureThreshold: 1
+      periodSeconds: 100
+    mountInstrumentStorage: false
+    hasRunProperties: true
+    hasSetupProperties: true
+    hasLogback: false
+    hasExternalXSLT: false
+    includeDatabaseJar: false
+  # authn.oaipmh -- OAI-PMH (Open Archive Initiative-Protocol for Metadata Harvesting) COMPONENT
+  - name: "icat-oaipmh"
+    repoKey: "icat.oaipmh"
+    version: "2.0.1"
+    replicas: 1
+    secretTokenSecretName: "elastic-apm-token"
+    resources:
+      requests:
+        memory: "500Mi"
+    readinessProbe:
+      httpGet:
+        path: "/authn.oaipmh/version"
+        port: 8080
+      failureThreshold: 1
+      periodSeconds: 100
+    mountInstrumentStorage: false
+    hasRunProperties: true
+    hasSetupProperties: true
+    hasExternalXSLT: true
+    includeDatabaseJar: false
 
 instrumentStorage:
   - name: bl01 # NCD-SWEET

@@ -57,6 +57,76 @@ match component:
         if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
 
         deploy(files=overwrite_files)
+    case "icat.oaipmh":
+        prop_list: list = ["icat.url", "icat.auth", "repositoryName", "adminEmails", "requestUrl", "maxResults",
+                           "icatDateTimeFormat",
+                           "icatDateTimeZone", "metadataPrefixes", "data.configurations"]
+        run_props: dict = get_setup_parameters(prop_name, prop_list)
+
+        metadata_prefixes: str = run_props["metadataPrefixes"].split()
+        data_configurations: str = run_props["data.configurations"].split()
+        try:
+            sets: list = run_props["sets"].split()
+        except KeyError:
+            sets: list = []
+
+        try:
+            val: int = int(run_props["maxResults"])
+            if val < 1:
+                sys.exit("The value for 'maxResults' is less than 1 in run.properties")
+        except ValueError:
+            sys.exit("The value for 'maxResults' is no integer in run.properties")
+
+        if "oai_dc" not in metadata_prefixes:
+            sys.exit("Support for the metadataPrefix 'oai_dc' is missing in run.properties")
+
+        for v in data_configurations:
+            if "," in v:
+                sys.exit(f"The value '{v}' in data.configurations list must not contain a comma in run.properties")
+            if f"data.{v}.mainObject" not in run_props:
+                sys.exit(
+                    f"data.configurations include '{v}' but 'data.{v}.mainObject' is not defined in run.properties")
+            if f"data.{v}.metadataPrefixes" not in run_props:
+                sys.exit(
+                    f"data.configurations include '{v}' but 'data.{v}.metadataPrefixes' is not defined in run.properties")
+
+            data_configuration_metadata_prefixes: list = run_props["data.{v}.metadataPrefixes"].split()
+            if "oai_dc" not in data_configuration_metadata_prefixes:
+                sys.exit(f"Support for 'oai_dc' is missing under 'data.{v}.metadataPrefixes' in run.properties")
+            for w in data_configuration_metadata_prefixes:
+                if w not in metadata_prefixes:
+                    sys.exit(
+                        f"data.{v}.metadataPrefixes include '{w}' but this metadataPrefix is not defined in run.properties")
+
+        for v in metadata_prefixes:
+            if f"{v}.xslt" not in run_props:
+                sys.exit(f"metadataPrefixes include '{v}' but '{v}.xslt' is not defined in run.properties")
+            if f"{v}.namespace" not in run_props:
+                sys.exit(f"metadataPrefixes include '{v}' but '{v}'.namespace' is not defined in run.properties")
+            if f"{v}.schema" not in run_props:
+                sys.exit(f"metadataPrefixes include '{v}' but '{v}.schema' is not defined in run.properties")
+            if "responseDebug" not in run_props or run_props["responseDebug"] != "true":
+                if not os.path.exists(run_props[v + ".xslt"]):
+                    sys.exit(
+                        f"The file '{run_props[f"{v}.xslt"]}' as listed in run.properties for '{v}.xslt' does not exist on your system")
+
+        for v in sets:
+            if "," in v:
+                sys.exit(f"The value '{v}' in sets list must not contain a comma in run.properties")
+            if f"sets.{v}.name" not in run_props:
+                sys.exit(f"sets include '{v}' but 'sets.{v}.name' is not defined in run.properties")
+            if f"sets.{v}.configurations" not in run_props:
+                sys.exit(f"sets include '{v}' but 'sets.{v}.configurations' is not defined in run.properties")
+
+            set_data_configurations: list = run_props[f"sets.{v}.configurations"].split()
+            for w in set_data_configurations:
+                if w not in data_configurations:
+                    sys.exit(
+                        f"sets.{v}.configurations include '{w}' but this data configuration is not defined in run.properties")
+
+        if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
+
+        deploy(files=overwrite_files)
     case "icat.server":
         prop_list: list = ["lifetimeMinutes", "rootUserNames", "authn.list", "notification.list", "log.list"]
         icat_properties: dict = get_properties(prop_name, prop_list)
