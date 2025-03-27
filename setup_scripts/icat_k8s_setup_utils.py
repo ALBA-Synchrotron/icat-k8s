@@ -149,8 +149,6 @@ def deploy(files=None, jms_topic_connection_factory=None,
     if not jms_topic_connection_factory: jms_topic_connection_factory = 'jms/__defaultConnectionFactory'
     if files is None: files = []
 
-    print("Files: ", files)
-
     war: str = unzip_war()
 
     for src, dir in files:
@@ -160,7 +158,6 @@ def deploy(files=None, jms_topic_connection_factory=None,
         except:
             pass
         shutil.copy(src, dir)
-        print(f"Copying {src} to {dir}")
 
     f = os.path.join("unzipped", "WEB-INF", "web.xml")
     if os.path.exists(f):

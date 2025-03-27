@@ -58,6 +58,11 @@ spec:
               mountPath: /opt/payara/deployments/run.properties
               subPath: run.properties
             {{- end }}
+            {{- if .hasLogback }}
+            - name: logback-xml
+              mountPath: /opt/payara/deployments/logback.xml
+              subPath: logback.xml
+            {{- end }}
       containers:
         - image: {{ $.Values.global.images.container }}
           imagePullPolicy: Always
@@ -112,21 +117,6 @@ spec:
               mountPath: {{ .mountPath }}
               readOnly: {{ .readOnly }}
           {{- end }}
-          {{- end }}
-          {{- if .hasSetupProperties }}
-          - name: setup-properties
-            mountPath: /opt/payara/deployments/setup.properties
-            subPath: setup.properties
-          {{- end }}
-          {{- if .hasRunProperties }}
-          - name: run-properties
-            mountPath: /opt/payara/deployments/run.properties
-            subPath: run.properties
-          {{- end }}
-          {{- if .hasLogback }}
-          - name: logback-xml
-            mountPath: /opt/payara/deployments/logback.xml
-            subPath: logback.xml
           {{- end }}
           - name: shared-deployments-dir
             mountPath: /opt/payara/deployments/
