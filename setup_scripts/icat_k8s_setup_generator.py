@@ -155,7 +155,7 @@ match component:
                                                   "jms/ICAT/Topic")
         asadmin_commands.append(icat_jms_topic)
 
-        icat_jms_log: str = create_jms_resource("jakarta.jms.Topic", "jakarta.jms.TopicConnectionFactory",
+        icat_jms_log: str = create_jms_resource("jakarta.jms.Topic", "javax.jms.TopicConnectionFactory",
                                                 "jms/ICAT/log")
         asadmin_commands.append(icat_jms_log)
 
