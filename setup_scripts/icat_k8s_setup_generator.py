@@ -146,13 +146,17 @@ match component:
         db_commands: list = register_db(setup_props, "icat")
         asadmin_commands.extend(db_commands)
 
-        icat_jms_connection_factory: str = create_jms_resource("jakarta.jms.TopicConnectionFactory", "jms/CustomConnectionFactory")
+        icat_jms_connection_factory: str = create_jms_resource("jakarta.jms.TopicConnectionFactory",
+                                                               "org.apache.activemq.ActiveMQConnectionFactory",
+                                                               "jms/CustomConnectionFactory")
         asadmin_commands.append(icat_jms_connection_factory)
 
-        icat_jms_topic: str = create_jms_resource("jakarta.jms.Topic", "jms/ICAT/Topic")
+        icat_jms_topic: str = create_jms_resource("jakarta.jms.Topic", "jakarta.jms.TopicConnectionFactory",
+                                                  "jms/ICAT/Topic")
         asadmin_commands.append(icat_jms_topic)
 
-        icat_jms_log: str = create_jms_resource("jakarta.jms.Topic", "jms/ICAT/log")
+        icat_jms_log: str = create_jms_resource("jakarta.jms.Topic", "jakarta.jms.TopicConnectionFactory",
+                                                "jms/ICAT/log")
         asadmin_commands.append(icat_jms_log)
 
         if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
