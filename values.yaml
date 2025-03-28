@@ -108,11 +108,12 @@ components:
     mountInstrumentStorage: false
     hasRunProperties: true
     hasSetupProperties: true
+    hasLogback: true
     hasExternalXSLT: true
     includeDatabaseJar: false
     startupDependencies:
       - name: "icat-server"
-        path: "/icat.server/version"
+        path: "/icat/version/"
   - name: "icat-server"
     repoKey: "icat.server"
     version: "6.1.0"
@@ -127,14 +128,14 @@ components:
         cpu: "1.0"
     readinessProbe:
       httpGet:
-        path: "/ids/ping"
+        path: "/icat/version/"
         port: 8080
       failureThreshold: 1
       periodSeconds: 100
     mountInstrumentStorage: false
     hasRunProperties: true
     hasSetupProperties: true
-    hasLogback: false
+    hasLogback: true
     includeDatabaseJar: true
     startupDependencies:
       - name: "authn-db"

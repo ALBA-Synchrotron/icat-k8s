@@ -92,20 +92,23 @@ spec:
         - image: {{ $.Values.global.images.container }}
           imagePullPolicy: Always
           command:
-            - "java"
-            {{- if $.Values.elasticAPM.enabled }}
-            - "-javaagent:/opt/payara/libs/elastic-apm-agent.jar"
-            - "-Delastic.apm.service_name=icat-core-{{ .name}}-{{ $.Values.global.environment }}"
-            - "-Delastic.apm.application_packages=es.cells.icat.authn_alba,org.icatproject.authn_anon,org.icatproject.authn_db,org.icatproject.icat_oaipmh,org.icatproject.exposed,org.icatproject.ids"
-            {{- end }}
-            - "-jar"
-            - "/opt/payara/payara-micro.jar"
-            - "--addlibs"
-            - "/opt/payara/libs/"
-            - "--postbootcommandfile"
-            - "/opt/payara/deployments/post_boot_asadmin_commands"
-            - "--deploydir"
-            - "/opt/payara/deployments/"
+            # The creation of the glassfish-acc.xml is necessary for the ICAT server to run as otherwise will
+            # fail to detect the container type and will not start (see following file, function at line 27):
+            # https://github.com/icatproject/icat.utils/blob/master/src/main/java/org/icatproject/utils/ContainerGetter.java
+            - "sh"
+            - "-c"
+            - |
+              touch /opt/payara/glassfish-acc.xml && \
+              java \
+              {{- if $.Values.elasticAPM.enabled }}
+              -javaagent:/opt/payara/libs/elastic-apm-agent.jar \
+              -Delastic.apm.service_name=icat-core-{{ .name}}-{{ $.Values.global.environment }} \
+              -Delastic.apm.application_packages=es.cells.icat.authn_alba,org.icatproject.authn_anon,org.icatproject.authn_db,org.icatproject.icat_oaipmh,org.icatproject.exposed,org.icatproject.ids \
+              {{- end }}
+              -jar /opt/payara/payara-micro.jar \
+              --addlibs /opt/payara/libs/ \
+              --postbootcommandfile /opt/payara/deployments/post_boot_asadmin_commands \
+              --deploydir /opt/payara/deployments/
           env:
             - name: DASH_PWD
               value: "Present Working Dilemma"
