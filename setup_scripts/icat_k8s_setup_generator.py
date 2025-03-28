@@ -146,12 +146,12 @@ match component:
         db_commands: list = register_db(setup_props, "icat")
         asadmin_commands.extend(db_commands)
 
-        icat_jms_connection_factory: str = create_jms_resource("jakarta.jms.TopicConnectionFactory",
+        icat_jms_connection_factory: str = create_jms_resource("javax.jms.ConnectionFactory",
                                                                "org.apache.activemq.ActiveMQConnectionFactory",
                                                                "jms/CustomConnectionFactory")
         asadmin_commands.append(icat_jms_connection_factory)
 
-        icat_jms_topic: str = create_jms_resource("jakarta.jms.Topic", "jakarta.jms.TopicConnectionFactory",
+        icat_jms_topic: str = create_jms_resource("jakarta.jms.Topic", "javax.jms.TopicConnectionFactory",
                                                   "jms/ICAT/Topic")
         asadmin_commands.append(icat_jms_topic)
 
