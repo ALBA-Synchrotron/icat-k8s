@@ -55,7 +55,8 @@ def register_db(db_params: dict, db_name: str) -> list:
 
 
 def create_jms_resource(resource_type: str, factory: str, name: str) -> str:
-    return f"create-custom-resource --restype {resource_type} --factoryclass={factory} {name}"
+    return f"create-custom-resource --restype {resource_type} {name}"
+    #return f"create-custom-resource --restype {resource_type} --factoryclass={factory} {name}"
 
 
 def get_properties(file_name: str, needed) -> dict:
