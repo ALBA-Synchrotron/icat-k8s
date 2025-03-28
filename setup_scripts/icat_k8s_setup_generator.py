@@ -146,7 +146,7 @@ match component:
         db_commands: list = register_db(setup_props, "icat")
         asadmin_commands.extend(db_commands)
 
-        icat_jms_connection_factory: str = create_jms_resource("jakarta.jms.ConnectionFactory", "jms/CustomConnectionFactory")
+        icat_jms_connection_factory: str = create_jms_resource("jakarta.jms.TopicConnectionFactory", "jms/CustomConnectionFactory")
         asadmin_commands.append(icat_jms_connection_factory)
 
         icat_jms_topic: str = create_jms_resource("jakarta.jms.Topic", "jms/ICAT/Topic")
