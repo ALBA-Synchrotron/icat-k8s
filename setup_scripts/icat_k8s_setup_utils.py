@@ -67,7 +67,7 @@ def get_broker_props() -> dict:
         ret["password"] = broker_password
     if broker_host:
         ret["host"] = broker_host
-
+    print(ret)
     if not broker_username or not broker_password or not broker_host:
         sys.exit("BROKER_USERNAME / BROKER_PASSWORD / BROKER_HOST must be set")
     return ret
