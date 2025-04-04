@@ -82,7 +82,7 @@ def create_jms_connection_pool(props: dict, name: str, rar_dir: str = "/opt/paya
 
     ret.append(f"deploy --type rar --name {rar_name} {rar_dir}/{rar_name}.rar")
     ret.append(
-        f"create-resource-adapter-config  --property ServerUrl=tcp\://{props.get("host")}\:61616:UserName={props.get("username")}:Password={props.get("password")} {rar_name}")
+        f"create-resource-adapter-config  --property ServerUrl=tcp\://{props.get("host")}\:61616:UserName='{props.get("username")}':Password='{props.get("password")}' {rar_name}")
 
     ret.append(
         f"create-connector-connection-pool  --raname {rar_name} --connectiondefinition jakarta.jms.ConnectionFactory --ping true --isconnectvalidatereq true {name}Pool")

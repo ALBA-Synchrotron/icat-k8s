@@ -40,12 +40,12 @@ spec:
           env:
             - name: DASH_PWD
               value: "Present Working Dilemma"
-            - name: ARTERMIS_USER
+            - name: ARTEMIS_USER
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
                   key: username
-            - name: ARTERMIS_PASSWORD
+            - name: ARTEMIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
