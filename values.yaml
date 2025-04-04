@@ -132,6 +132,7 @@ components:
     startupDependencies:
       - name: "icat-server"
         path: "/icat/version/"
+  # icat.server -- ICAT SERVER COMPONENT
   - name: "icat-server"
     repoKey: "icat.server"
     version: "6.1.0"

@@ -101,17 +101,39 @@ spec:
               mountPath: /opt/payara/rar/
             {{- end}}
         {{- if .startupDependencies }}
-        {{- range .startupDependencies }}
-        - name: init-{{ $.Values.global.environment }}-wait-for-{{ .name }}-svc-available
+
+        - name: init-{{ $.Values.global.environment }}-wait-for-dependent-svc-availability
           image: {{ $.Values.global.images.initContainer.curl }}
           command:
             - "sh"
             - "-c"
             - |
-              while [ $(curl -sw '%{http_code}' "http://icat-core-{{ .name}}-service-{{ $.Values.global.environment }}:8080{{ .path }}" -o /dev/null) -ne 200 ]; do
-              sleep 15;
+              urls="
+              {{- range .startupDependencies }}
+              http://icat-core-{{ .name}}-service-{{ $.Values.global.environment }}:8080{{ .path }}
+              {{- end }}
+              "
+              while true; do
+                all_ok=true
+
+                for url in $urls; do
+                  status=$(curl -sw '%{http_code}' --max-time 5 "$url" -o /dev/null)
+                  echo "Checking $url - Status: $status"
+
+                  if [ "$status" -ne 200 ]; then
+                    all_ok=false
+                  fi
+                done
+
+                if [ "$all_ok" = true ]; then
+                  break
+                fi
+
+                echo "Waiting 5s before retrying..."
+                sleep 5
               done
-        {{- end }}
+              echo "✅ All services are up!"
+
         {{- end }}
       containers:
         - image: {{ $.Values.global.images.container }}
