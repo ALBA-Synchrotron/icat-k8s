@@ -7,6 +7,7 @@ import re
 import shutil
 import sys
 import zipfile
+from typing import Optional
 from xml.dom.minidom import parse
 
 
@@ -56,13 +57,18 @@ def register_db(db_params: dict, db_name: str) -> list:
 
 def get_broker_props() -> dict:
     ret: dict = {}
-    if os.getenv("BROKER_USERNAME", None):
-        ret["username"] = os.getenv("BROKER_USERNAME")
-    if os.getenv("BROKER_PASSWORD", None):
-        ret["password"] = os.getenv("BROKER_PASSWORD")
-    if os.getenv("BROKER_HOST", None):
-        ret["host"] = os.getenv("BROKER_HOST")
-    if not "username" in ret or not "password" in ret or not "host" in ret:
+    broker_username: Optional[str] = os.getenv("BROKER_USERNAME")
+    broker_password: Optional[str] = os.getenv("BROKER_PASSWORD")
+    broker_host: Optional[str] = os.getenv("BROKER_HOST")
+
+    if broker_username:
+        ret["username"] = broker_username
+    if broker_password:
+        ret["password"] = broker_password
+    if broker_host:
+        ret["host"] = broker_host
+
+    if not broker_username or not broker_password or not broker_host:
         sys.exit("BROKER_USERNAME / BROKER_PASSWORD / BROKER_HOST must be set")
     return ret
 

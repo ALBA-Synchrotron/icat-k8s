@@ -37,6 +37,23 @@ spec:
       initContainers:
         - name: init-{{ .name }}-{{ $.Values.global.environment }}-setup
           image: {{ $.Values.global.images.initContainer.python }}
+          env:
+            - name: DASH_PWD
+              value: "Present Working Dilemma"
+            {{- if .requiresBroker}}
+            - name: BROKER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
+                  key: username
+            - name: BROKER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
+                  key: password
+            - name: BROKER_HOST
+              value: icat-core-broker-service-{{ $.Values.global.environment }}
+            {{- end}}
           command:
             - "sh"
             - "-c"
@@ -135,20 +152,6 @@ spec:
                   name: {{ $.Values.elasticAPM.apm.secretTokenSecretName }}
                   key: token
             {{- end }}
-          {{- if .requiresBroker}}
-            - name: BROKER_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
-                  key: username
-            - name: BROKER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
-                  key: password
-            - name: BROKER_HOST
-              value: icat-core-broker-service-{{ $.Values.global.environment }}
-          {{- end}}
           name: icat-core-{{ .name}}-{{ $.Values.global.environment }}
           ports:
             - containerPort: 8080
