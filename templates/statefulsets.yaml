@@ -43,12 +43,12 @@ spec:
             - name: ARTERMIS_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Values.global.brokerConfigSecretName }}
+                  name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
                   key: username
             - name: ARTERMIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Values.global.brokerConfigSecretName }}
+                  name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
                   key: password
           name: icat-core-broker-{{ $.Values.global.environment }}
           ports:

@@ -139,12 +139,12 @@ spec:
             - name: BROKER_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Values.global.brokerConfigSecretName }}
+                  name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
                   key: username
             - name: BROKER_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Values.global.brokerConfigSecretName }}
+                  name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
                   key: password
             - name: BROKER_HOST
               value: icat-core-broker-service-{{ $.Values.global.environment }}
