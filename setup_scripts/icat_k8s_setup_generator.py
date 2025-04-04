@@ -134,12 +134,10 @@ match component:
 
         asadmin_commands.extend(jms_pool_commands)
 
-        icat_jms_topic: str = create_jms_resource("jakarta.jms.Topic", "jakarta.jms.TopicConnectionFactory",
-                                                  "jms/ICAT/Topic")
+        icat_jms_topic: str = create_jms_resource("jakarta.jms.Topic", "jms/ICAT/Topic")
         asadmin_commands.append(icat_jms_topic)
 
-        icat_jms_log: str = create_jms_resource("jakarta.jms.Topic", "jakarta.jms.TopicConnectionFactory",
-                                                "jms/ICAT/log")
+        icat_jms_log: str = create_jms_resource("jakarta.jms.Topic", "jms/ICAT/log")
         asadmin_commands.append(icat_jms_log)
 
         prop_list: list = ["lifetimeMinutes", "rootUserNames", "authn.list", "notification.list", "log.list"]

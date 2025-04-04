@@ -91,8 +91,8 @@ def create_jms_connection_pool(props: dict, name: str, rar_dir: str = "/opt/paya
     return ret
 
 
-def create_jms_resource(resource_type: str, factory: str, name: str) -> str:
-    return f"create-custom-resource --restype {resource_type} --factoryclass={factory} {name}"
+def create_jms_resource(resource_type: str, name: str, rar_name: str = "activemq-rar") -> str:
+    return f"create-admin-object --raname {rar_name} --restype {resource_type} --property PhysicalName={name} jms/{name}"
 
 
 def get_properties(file_name: str, needed) -> dict:
