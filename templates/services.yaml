@@ -23,5 +23,35 @@ spec:
     component: {{ .name }}
     release: {{ $.Release.Name }}
 status:
-  loadBalancer: {}
+  loadBalancer: { }
 {{- end }}
+{{- if .Values.broker}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    app: icat
+    env: {{ $.Values.global.environment }}
+    tier: core
+    component: broker
+    release: {{ $.Release.Name }}
+  name: icat-core-broker-service-{{ $.Values.global.environment }}
+spec:
+  ports:
+    - name: "messaging"
+      port: 61616
+      targetPort: 61616
+    - name: "http"
+      port: 8161
+      targetPort: 8161
+  selector:
+    app: icat
+    env: {{ $.Values.global.environment }}
+    tier: core
+    component: broker
+    release: {{ $.Release.Name }}
+status:
+  loadBalancer: { }
+{{- end}}

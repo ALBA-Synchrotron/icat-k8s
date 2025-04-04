@@ -2,7 +2,8 @@ import os
 import sys
 
 from icat_k8s_setup_utils import get_arguments, register_db, create_jms_resource, get_properties, \
-    deploy, get_setup_parameters
+    deploy, get_setup_parameters, create_jms_connection_pool
+from setup_scripts.icat_k8s_setup_utils import get_broker_props
 
 args: dict = get_arguments()
 component: str = args["component"]
@@ -128,6 +129,20 @@ match component:
 
         deploy(files=overwrite_files)
     case "icat.server":
+        broker_props: dict = get_broker_props()
+
+        jms_pool_commands: list = create_jms_connection_pool(broker_props, "jms/CustomConnectionFactory")
+
+        asadmin_commands.extend(jms_pool_commands)
+
+        icat_jms_topic: str = create_jms_resource("jakarta.jms.Topic", "jakarta.jms.TopicConnectionFactory",
+                                                  "jms/ICAT/Topic")
+        asadmin_commands.append(icat_jms_topic)
+
+        icat_jms_log: str = create_jms_resource("jakarta.jms.Topic", "jakarta.jms.TopicConnectionFactory",
+                                                "jms/ICAT/log")
+        asadmin_commands.append(icat_jms_log)
+
         prop_list: list = ["lifetimeMinutes", "rootUserNames", "authn.list", "notification.list", "log.list"]
         icat_properties: dict = get_properties(prop_name, prop_list)
 
@@ -145,19 +160,6 @@ match component:
                                                   "container", "port"])
         db_commands: list = register_db(setup_props, "icat")
         asadmin_commands.extend(db_commands)
-
-        icat_jms_connection_factory: str = create_jms_resource("jakarta.jms.ConnectionFactory",
-                                                               "org.apache.activemq.ActiveMQConnectionFactory",
-                                                               "jms/CustomConnectionFactory")
-        asadmin_commands.append(icat_jms_connection_factory)
-
-        icat_jms_topic: str = create_jms_resource("jakarta.jms.Topic", "jakarta.jms.TopicConnectionFactory",
-                                                  "jms/ICAT/Topic")
-        asadmin_commands.append(icat_jms_topic)
-
-        icat_jms_log: str = create_jms_resource("jakarta.jms.Topic", "jakarta.jms.TopicConnectionFactory",
-                                                "jms/ICAT/log")
-        asadmin_commands.append(icat_jms_log)
 
         if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
 

@@ -1,0 +1,69 @@
+{{- if .Values.broker}}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: {{ $.Values.global.namespace }}
+  name: icat-core-artemis-activemq-statefulset-{{ $.Values.global.environment }}
+  labels:
+    app: icat
+    env: {{ $.Values.global.environment }}
+    tier: core
+    component: broker
+    release: {{ $.Release.Name }}
+spec:
+  replicas: {{ .Values.broker.replicas }}
+  selector:
+    matchLabels:
+      app: icat
+      env: {{ $.Values.global.environment }}
+      tier: core
+      component: broker
+      release: {{ $.Release.Name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: icat
+        env: {{ $.Values.global.environment }}
+        tier: core
+        component: broker
+        release: {{ $.Release.Name }}
+    spec:
+      priorityClassName: icat-priority
+      containers:
+        - image: {{ .Values.broker.brokerImage }}
+          imagePullPolicy: Always
+          env:
+            - name: DASH_PWD
+              value: "Present Working Dilemma"
+            - name: ARTERMIS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.global.brokerConfigSecretName }}
+                  key: username
+            - name: ARTERMIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.global.brokerConfigSecretName }}
+                  key: password
+          name: icat-core-broker-{{ $.Values.global.environment }}
+          ports:
+            - containerPort: 61616
+              name: messaging-port
+            - containerPort: 8161
+              name: http-port
+          {{- if .Values.broker.resources }}
+          resources:
+            {{- toYaml .Values.broker.resources | nindent 12 }}
+          {{- end }}
+          {{- if .Values.broker.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.broker.readinessProbe | nindent 12 }}
+          {{- end }}
+      restartPolicy: Always
+status: { }
+{{- end }}

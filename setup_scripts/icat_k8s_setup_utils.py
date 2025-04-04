@@ -54,9 +54,39 @@ def register_db(db_params: dict, db_name: str) -> list:
     return ret_commands
 
 
+def get_broker_props() -> dict:
+    ret: dict = {}
+    if os.getenv("BROKER_USERNAME", None):
+        ret["username"] = os.getenv("BROKER_USERNAME")
+    if os.getenv("BROKER_PASSWORD", None):
+        ret["password"] = os.getenv("BROKER_PASSWORD")
+    if os.getenv("BROKER_HOST", None):
+        ret["host"] = os.getenv("BROKER_HOST")
+    if not "username" in ret or not "password" in ret or not "host" in ret:
+        sys.exit("BROKER_USERNAME / BROKER_PASSWORD / BROKER_HOST must be set")
+    return ret
+
+
+def create_jms_connection_pool(props: dict, name: str, rar_dir: str = "/opt/payara/rar",
+                               rar_name: str = "activemq-rar") -> list:
+    ret: list = []
+    rar_path: str = os.path.join(rar_dir, f"{rar_name}.rar")
+    if not os.path.exists(rar_path):
+        sys.exit(f"{rar_path} file not found")
+
+    ret.append(f"deploy --type rar --name {rar_name} {rar_dir}/{rar_name}.rar")
+    ret.append(
+        f"create-resource-adapter-config  --property ServerUrl=tcp\://{props.get("host")}\:61616:UserName='{props.get("username")}':Password='{props.get("password")}' {rar_name}")
+
+    ret.append(
+        f"create-connector-connection-pool  --raname {rar_name} --connectiondefinition javax.jms.ConnectionFactory --ping true --isconnectvalidatereq true {name}")
+    ret.append(f"create-connector-resource --poolname {name} jms/ConnectionFactory")
+
+    return ret
+
+
 def create_jms_resource(resource_type: str, factory: str, name: str) -> str:
-    return f"create-custom-resource --restype {resource_type} {name}"
-    #return f"create-custom-resource --restype {resource_type} --factoryclass={factory} {name}"
+    return f"create-custom-resource --restype {resource_type} --factoryclass={factory} {name}"
 
 
 def get_properties(file_name: str, needed) -> dict:

@@ -8,6 +8,7 @@ metadata:
   labels:
     app: icat
     env: {{ $.Values.global.environment }}
+    tier: core
     component: {{ .name }}
     release: {{ $.Release.Name }}
 spec:
@@ -47,6 +48,9 @@ spec:
               {{- if .includeDatabaseJar }}
               curl -o /opt/payara/libs/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar {{ $.Values.global.artifacts.repositoryURL }}/org/icatproject/{{ $.Values.global.artifacts.databaseConnector.name }}/{{ $.Values.global.artifacts.databaseConnector.version }}/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar && \
               {{- end }}
+              {{- if .requiresBroker}}
+                curl -o /opt/payara/rar/activemq-rar.rar {{ $.Values.global.artifacts.repositoryURL }}{{$.Values.broker.rar.groupPath}}{{$.Values.broker.rar.artifactId}}/{{$.Values.broker.rar.version}}/{{$.Values.broker.rar.artifactId}}-{{$.Values.broker.rar.version}}.rar && \
+              {{- end }}
               curl -L -o /opt/payara/deployments/icat_k8s_setup_generator.py {{ $.Values.global.initScriptsURL }}/icat_k8s_setup_generator.py && \
               curl -L -o /opt/payara/deployments/icat_k8s_setup_utils.py {{ $.Values.global.initScriptsURL }}/icat_k8s_setup_utils.py && \
               cd /opt/payara/deployments/ && \
@@ -75,6 +79,10 @@ spec:
             - name: external-xslt
               mountPath: /opt/payara/xslt/
             {{- end }}
+            {{- if .requiresBroker}}
+            - name: rar-dir
+              mountPath: /opt/payara/rar/
+            {{- end}}
         {{- if .startupDependencies }}
         {{- range .startupDependencies }}
         - name: init-{{ $.Values.global.environment }}-wait-for-{{ .name }}-svc-available
@@ -127,6 +135,20 @@ spec:
                   name: {{ $.Values.elasticAPM.apm.secretTokenSecretName }}
                   key: token
             {{- end }}
+          {{- if .requiresBroker}}
+            - name: BROKER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.global.brokerConfigSecretName }}
+                  key: username
+            - name: BROKER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.global.brokerConfigSecretName }}
+                  key: password
+            - name: BROKER_HOST
+              value: icat-core-broker-service-{{ $.Values.global.environment }}
+          {{- end}}
           name: icat-core-{{ .name}}-{{ $.Values.global.environment }}
           ports:
             - containerPort: 8080
@@ -150,6 +172,10 @@ spec:
             mountPath: /opt/payara/deployments/
           - name: shared-libs-dir
             mountPath: /opt/payara/libs/
+          {{- if .requiresBroker}}
+          - name: rar-dir
+            mountPath: /opt/payara/rar/
+          {{- end}}
           {{- if .hasExternalXSLT }}
           - name: external-xslt
             mountPath: /opt/payara/xslt/
@@ -160,6 +186,10 @@ spec:
           emptyDir: {}
         - name: shared-libs-dir
           emptyDir: {}
+        {{- if .requiresBroker}}
+        - name: rar-dir
+          emptyDir: {}
+        {{- end}}
         {{- if .hasSetupProperties }}
         - name: setup-properties
           secret:
