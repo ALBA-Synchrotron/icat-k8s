@@ -41,7 +41,7 @@ spec:
             - name: DASH_PWD
               value: "Present Working Dilemma"
             {{- if .requiresBroker}}
-            - name: BROKER_USER
+            - name: BROKER_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}

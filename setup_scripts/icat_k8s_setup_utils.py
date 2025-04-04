@@ -67,7 +67,7 @@ def get_broker_props() -> dict:
         ret["password"] = broker_password
     if broker_host:
         ret["host"] = broker_host
-    print(ret)
+
     if not broker_username or not broker_password or not broker_host:
         sys.exit("BROKER_USERNAME / BROKER_PASSWORD / BROKER_HOST must be set")
     return ret
@@ -85,7 +85,7 @@ def create_jms_connection_pool(props: dict, name: str, rar_dir: str = "/opt/paya
         f"create-resource-adapter-config  --property ServerUrl=tcp\://{props.get("host")}\:61616:UserName='{props.get("username")}':Password='{props.get("password")}' {rar_name}")
 
     ret.append(
-        f"create-connector-connection-pool  --raname {rar_name} --connectiondefinition javax.jms.ConnectionFactory --ping true --isconnectvalidatereq true {name}")
+        f"create-connector-connection-pool  --raname {rar_name} --connectiondefinition org.apache.activemq.ra.ActiveMQConnectionFactory --ping true --isconnectvalidatereq true {name}")
     ret.append(f"create-connector-resource --poolname {name} jms/ConnectionFactory")
 
     return ret
