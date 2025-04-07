@@ -3,14 +3,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: {{ $.Values.global.namespace }}
+  namespace: {{ $.Values.namespace }}
   labels:
     app: icat
-    env: {{ $.Values.global.environment }}
+    env: {{ $.Values.environment }}
     tier: core
     component: {{ .name }}
     release: {{ $.Release.Name }}
-  name: icat-core-{{ .name}}-service-{{ $.Values.global.environment }}
+  name: icat-core-{{ .name}}-service-{{ $.Values.environment }}
 spec:
   ports:
     - name: "8080"
@@ -18,7 +18,7 @@ spec:
       targetPort: 8080
   selector:
     app: icat
-    env: {{ $.Values.global.environment }}
+    env: {{ $.Values.environment }}
     tier: core
     component: {{ .name }}
     release: {{ $.Release.Name }}
@@ -30,14 +30,14 @@ status:
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: {{ $.Values.global.namespace }}
+  namespace: {{ $.Values.namespace }}
   labels:
     app: icat
-    env: {{ $.Values.global.environment }}
+    env: {{ $.Values.environment }}
     tier: core
     component: broker
     release: {{ $.Release.Name }}
-  name: icat-core-broker-service-{{ $.Values.global.environment }}
+  name: icat-core-broker-service-{{ $.Values.environment }}
 spec:
   ports:
     - name: "messaging"
@@ -48,7 +48,7 @@ spec:
       targetPort: 8161
   selector:
     app: icat
-    env: {{ $.Values.global.environment }}
+    env: {{ $.Values.environment }}
     tier: core
     component: broker
     release: {{ $.Release.Name }}

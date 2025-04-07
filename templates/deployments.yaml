@@ -3,11 +3,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: {{ $.Values.global.namespace }}
-  name: icat-core-{{ .name}}-deployment-{{ $.Values.global.environment }}
+  namespace: {{ $.Values.namespace }}
+  name: icat-core-{{ .name}}-deployment-{{ $.Values.environment }}
   labels:
     app: icat
-    env: {{ $.Values.global.environment }}
+    env: {{ $.Values.environment }}
     tier: core
     component: {{ .name }}
     release: {{ $.Release.Name }}
@@ -16,7 +16,7 @@ spec:
   selector:
     matchLabels:
       app: icat
-      env: {{ $.Values.global.environment }}
+      env: {{ $.Values.environment }}
       tier: core
       component: {{ .name }}
       release: {{ $.Release.Name }}
@@ -28,89 +28,76 @@ spec:
     metadata:
       labels:
         app: icat
-        env: {{ $.Values.global.environment }}
+        env: {{ $.Values.environment }}
         tier: core
         component: {{ .name }}
         release: {{ $.Release.Name }}
     spec:
       priorityClassName: icat-priority
       initContainers:
-        - name: init-{{ .name }}-{{ $.Values.global.environment }}-setup
-          image: {{ $.Values.global.images.initContainer.python }}
+        - name: init-{{ .name }}-{{ $.Values.environment }}-setup
+          image: {{ $.Values.images.initContainers.python }}
           env:
             - name: DASH_PWD
               value: "Present Working Dilemma"
-            {{- if .requiresBroker}}
+            {{- if call "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts) }}
             - name: BROKER_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
+                  name: {{ $.Values.brokerConfigSecretName }}-{{ $.Values.environment }}
                   key: username
             - name: BROKER_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
+                  name: {{ $.Values.brokerConfigSecretName }}-{{ $.Values.environment }}
                   key: password
             - name: BROKER_HOST
-              value: icat-core-broker-service-{{ $.Values.global.environment }}
+              value: icat-core-broker-service-{{ $.Values.environment }}
             {{- end}}
           command:
             - "sh"
             - "-c"
             - |
-              {{- if $.Values.elasticAPM.enabled }}
-              curl -o /opt/payara/libs/elastic-apm-agent.jar {{ $.Values.global.artifacts.repositoryURL }}/elastic/elastic-apm-agent/{{ $.Values.elasticAPM.version }}/elastic-apm-agent-{{ $.Values.elasticAPM.version }}.jar && \
-              {{- end }}
-              curl -o /opt/payara/deployments/{{.repoKey}}-{{.version}}.war {{ $.Values.global.artifacts.repositoryURL }}/org/icatproject/{{ .repoKey }}/{{ .version }}/{{ .repoKey }}-{{ .version }}.war && \
-              {{- if .includeDatabaseJar }}
-              curl -o /opt/payara/libs/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar {{ $.Values.global.artifacts.repositoryURL }}/org/icatproject/{{ $.Values.global.artifacts.databaseConnector.name }}/{{ $.Values.global.artifacts.databaseConnector.version }}/{{ $.Values.global.artifacts.databaseConnector.name }}-{{ $.Values.global.artifacts.databaseConnector.version }}.jar && \
-              {{- end }}
-              {{- if .requiresBroker}}
-                curl -o /opt/payara/rar/activemq-rar.rar {{ $.Values.global.artifacts.repositoryURL }}{{$.Values.broker.rar.groupPath}}{{$.Values.broker.rar.artifactId}}/{{$.Values.broker.rar.version}}/{{$.Values.broker.rar.artifactId}}-{{$.Values.broker.rar.version}}.rar && \
-              {{- end }}
-              curl -L -o /opt/payara/deployments/icat_k8s_setup_generator.py {{ $.Values.global.initScriptsURL }}/icat_k8s_setup_generator.py && \
-              curl -L -o /opt/payara/deployments/icat_k8s_setup_utils.py {{ $.Values.global.initScriptsURL }}/icat_k8s_setup_utils.py && \
-              cd /opt/payara/deployments/ && \
-              python /opt/payara/deployments/icat_k8s_setup_generator.py --component {{ .repoKey }}
+              {{ include "component-init-container-setup-script" (dict "component" . "root" $) | nindent 14 }}
           volumeMounts:
             - name: shared-deployments-dir
               mountPath: /opt/payara/deployments
             - name: shared-libs-dir
               mountPath: /opt/payara/libs
-            {{- if .hasSetupProperties }}
+            {{- if include "hasItemInList" (dict "item" "setup-properties" "list" .secretAndConfigMapMounts) }}
             - name: setup-properties
               mountPath: /opt/payara/deployments/setup.properties
               subPath: setup.properties
             {{- end }}
-            {{- if .hasRunProperties }}
+            {{- if include "hasItemInList" (dict "item" "run-properties" "list" .secretAndConfigMapMounts) }}
             - name: run-properties
               mountPath: /opt/payara/deployments/run.properties
               subPath: run.properties
             {{- end }}
-            {{- if .hasLogback }}
+            {{- if include "hasItemInList" (dict "item" "logback" "list" .secretAndConfigMapMounts) }}
             - name: logback-xml
               mountPath: /opt/payara/deployments/logback.xml
               subPath: logback.xml
             {{- end }}
-            {{- if .hasExternalXSLT }}
+            {{- if include "hasItemInList" (dict "item" "oaipmh-xslt" "list" .secretAndConfigMapMounts) }}
             - name: external-xslt
               mountPath: /opt/payara/xslt/
             {{- end }}
-            {{- if .requiresBroker}}
+            {{- if include "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts) }}
             - name: rar-dir
               mountPath: /opt/payara/rar/
             {{- end}}
         {{- if .startupDependencies }}
 
-        - name: init-{{ $.Values.global.environment }}-wait-for-dependent-svc-availability
-          image: {{ $.Values.global.images.initContainer.curl }}
+        - name: init-{{ $.Values.environment }}-wait-for-dependent-svc-availability
+          image: {{ $.Values.images.initContainers.curl }}
           command:
             - "sh"
             - "-c"
             - |
               urls="
               {{- range .startupDependencies }}
-              http://icat-core-{{ .name}}-service-{{ $.Values.global.environment }}:8080{{ .path }}
+              http://icat-core-{{ .name}}-service-{{ $.Values.environment }}:{{.port}}{{ .path }}
               {{- end }}
               "
               while true; do
@@ -128,15 +115,12 @@ spec:
                 if [ "$all_ok" = true ]; then
                   break
                 fi
-
-                echo "Waiting 5s before retrying..."
                 sleep 5
               done
-              echo "✅ All services are up!"
 
         {{- end }}
       containers:
-        - image: {{ $.Values.global.images.container }}
+        - image: {{ $.Values.images.container }}
           imagePullPolicy: Always
           command:
             # The creation of the glassfish-acc.xml is necessary for the ICAT server to run as otherwise will
@@ -149,7 +133,7 @@ spec:
               java \
               {{- if $.Values.elasticAPM.enabled }}
               -javaagent:/opt/payara/libs/elastic-apm-agent.jar \
-              -Delastic.apm.service_name=icat-core-{{ .name}}-{{ $.Values.global.environment }} \
+              -Delastic.apm.service_name={{$.Values.elasticAPM.apm.serviceNamePrefix}}-{{ .name}}-{{ $.Values.environment }} \
               -Delastic.apm.application_packages=es.cells.icat.authn_alba,org.icatproject.authn_anon,org.icatproject.authn_db,org.icatproject.icat_oaipmh,org.icatproject.exposed,org.icatproject.ids \
               {{- end }}
               -jar /opt/payara/payara-micro.jar \
@@ -163,18 +147,18 @@ spec:
             - name: ELASTIC_APM_LOG_SENDING
               value:  "{{ $.Values.elasticAPM.apm.apmLogSending }}"
             - name: ELASTIC_APM_ENVIRONMENT
-              value: {{ $.Values.global.environment }}
+              value: {{ $.Values.environment }}
             - name: ELASTIC_APM_SERVER_URL
               value: {{ $.Values.elasticAPM.apm.serverUrl }}
             - name: APM_SERVICE_NAME
-              value: icat-core-{{ .name}}-{{ $.Values.global.environment }}
+              value: {{$.Values.elasticAPM.apm.serviceNamePrefix}}-{{ .name}}-{{ $.Values.environment }}
             - name: ELASTIC_APM_SECRET_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.elasticAPM.apm.secretTokenSecretName }}
                   key: token
             {{- end }}
-          name: icat-core-{{ .name}}-{{ $.Values.global.environment }}
+          name: icat-core-{{ .name}}-{{ $.Values.environment }}
           ports:
             - containerPort: 8080
           {{- if .resources }}
@@ -188,20 +172,20 @@ spec:
           volumeMounts:
           {{- if .mountInstrumentStorage }}
           {{- range $.Values.instrumentStorage }}
-            - name: {{ .name }}
-              mountPath: {{ .mountPath }}
-              readOnly: {{ .readOnly }}
+          - name: {{ .name }}
+            mountPath: {{ .mountPath }}
+            readOnly: {{ .readOnly }}
           {{- end }}
           {{- end }}
           - name: shared-deployments-dir
             mountPath: /opt/payara/deployments/
           - name: shared-libs-dir
             mountPath: /opt/payara/libs/
-          {{- if .requiresBroker}}
+          {{- if include "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts) }}
           - name: rar-dir
             mountPath: /opt/payara/rar/
           {{- end}}
-          {{- if .hasExternalXSLT }}
+          {{- if include "hasItemInList" (dict "item" "oaipmh-xslt" "list" .secretAndConfigMapMounts) }}
           - name: external-xslt
             mountPath: /opt/payara/xslt/
           {{- end}}
@@ -211,38 +195,38 @@ spec:
           emptyDir: {}
         - name: shared-libs-dir
           emptyDir: {}
-        {{- if .requiresBroker}}
+        {{- if include "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts) }}
         - name: rar-dir
           emptyDir: {}
         {{- end}}
-        {{- if .hasSetupProperties }}
+        {{- if include "hasItemInList" (dict "item" "setup-properties" "list" .secretAndConfigMapMounts) }}
         - name: setup-properties
           secret:
-            secretName: {{ $.Values.global.setupPropertiesSecretName }}-{{ $.Values.global.environment }}
+            secretName: {{ $.Values.setupPropertiesSecretName }}-{{ $.Values.environment }}
             items:
               - key: {{.name}}
                 path: setup.properties
         {{- end}}
-        {{- if .hasRunProperties }}
+        {{- if include "hasItemInList" (dict "item" "run-properties" "list" .secretAndConfigMapMounts) }}
         - name: run-properties
-          configMap:
-            name: {{ $.Values.global.runPropertiesConfigMapName }}-{{ $.Values.global.environment }}
+          secret:
+            secretName: {{ $.Values.runPropertiesSecretMapName }}-{{ $.Values.environment }}
             items:
               - key: {{.name}}
                 path: run.properties
         {{- end }}
-        {{- if .hasLogback }}
+        {{- if include "hasItemInList" (dict "item" "logback" "list" .secretAndConfigMapMounts) }}
         - name: logback-xml
           configMap:
-            name: {{ $.Values.global.logbackConfigMapName }}-{{ $.Values.global.environment }}
+            name: {{ $.Values.logbackConfigMapName }}-{{ $.Values.environment }}
             items:
             - key: {{.name}}
               path: logback.xml
         {{- end }}
-        {{- if .hasExternalXSLT }}
+        {{- if include "hasItemInList" (dict "item" "oaipmh-xslt" "list" .secretAndConfigMapMounts) }}
         - name: external-xslt
           configMap:
-            name: {{ $.Values.global.oaipmhXSLTConfigMapName }}-{{ $.Values.global.environment }}
+            name: {{ $.Values.oaipmhXSLTConfigMapName }}-{{ $.Values.environment }}
         {{- end }}
         {{- if .mountInstrumentStorage }}
         {{- range $.Values.instrumentStorage }}
@@ -254,5 +238,4 @@ spec:
         {{- end }}
         {{- end }}
 status: {}
----
 {{- end }}

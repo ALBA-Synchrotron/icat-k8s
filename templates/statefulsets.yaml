@@ -3,11 +3,11 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  namespace: {{ $.Values.global.namespace }}
-  name: icat-core-artemis-activemq-statefulset-{{ $.Values.global.environment }}
+  namespace: {{ $.Values.namespace }}
+  name: icat-core-artemis-activemq-statefulset-{{ $.Values.environment }}
   labels:
     app: icat
-    env: {{ $.Values.global.environment }}
+    env: {{ $.Values.environment }}
     tier: core
     component: broker
     release: {{ $.Release.Name }}
@@ -16,7 +16,7 @@ spec:
   selector:
     matchLabels:
       app: icat
-      env: {{ $.Values.global.environment }}
+      env: {{ $.Values.environment }}
       tier: core
       component: broker
       release: {{ $.Release.Name }}
@@ -28,14 +28,14 @@ spec:
     metadata:
       labels:
         app: icat
-        env: {{ $.Values.global.environment }}
+        env: {{ $.Values.environment }}
         tier: core
         component: broker
         release: {{ $.Release.Name }}
     spec:
       priorityClassName: icat-priority
       containers:
-        - image: {{ .Values.broker.brokerImage }}
+        - image: {{ .Values.images.broker }}
           imagePullPolicy: Always
           env:
             - name: DASH_PWD
@@ -43,14 +43,14 @@ spec:
             - name: ARTEMIS_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
+                  name: {{ $.Values.brokerConfigSecretName }}-{{ $.Values.environment }}
                   key: username
             - name: ARTEMIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Values.global.brokerConfigSecretName }}-{{ $.Values.global.environment }}
+                  name: {{ $.Values.brokerConfigSecretName }}-{{ $.Values.environment }}
                   key: password
-          name: icat-core-broker-{{ $.Values.global.environment }}
+          name: icat-core-broker-{{ $.Values.environment }}
           ports:
             - containerPort: 61616
               name: messaging-port
