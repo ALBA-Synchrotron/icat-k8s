@@ -33,14 +33,16 @@ spec:
         component: {{ .name }}
         release: {{ $.Release.Name }}
     spec:
-      priorityClassName: icat-priority
+      {{- if $.Values.deploymentPriorityClassName}}
+      priorityClassName: {{$.Values.deploymentPriorityClassName}}
+      {{- end}}
       initContainers:
         - name: init-{{ .name }}-{{ $.Values.environment }}-setup
           image: {{ $.Values.images.initContainers.python }}
           env:
             - name: DASH_PWD
               value: "Present Working Dilemma"
-            {{- if call "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts) }}
+            {{- if eq (include "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts)) "true" }}
             - name: BROKER_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -64,31 +66,30 @@ spec:
               mountPath: /opt/payara/deployments
             - name: shared-libs-dir
               mountPath: /opt/payara/libs
-            {{- if include "hasItemInList" (dict "item" "setup-properties" "list" .secretAndConfigMapMounts) }}
+            {{- if eq (include "hasItemInList" (dict "item" "setup-properties" "list" .optionalVolumesSecretsAndConfigMapsMounts)) "true" }}
             - name: setup-properties
               mountPath: /opt/payara/deployments/setup.properties
               subPath: setup.properties
             {{- end }}
-            {{- if include "hasItemInList" (dict "item" "run-properties" "list" .secretAndConfigMapMounts) }}
+            {{- if eq (include "hasItemInList" (dict "item" "run-properties" "list" .optionalVolumesSecretsAndConfigMapsMounts)) "true" }}
             - name: run-properties
               mountPath: /opt/payara/deployments/run.properties
               subPath: run.properties
             {{- end }}
-            {{- if include "hasItemInList" (dict "item" "logback" "list" .secretAndConfigMapMounts) }}
+            {{- if eq (include "hasItemInList" (dict "item" "logback" "list" .optionalVolumesSecretsAndConfigMapsMounts)) "true" }}
             - name: logback-xml
               mountPath: /opt/payara/deployments/logback.xml
               subPath: logback.xml
             {{- end }}
-            {{- if include "hasItemInList" (dict "item" "oaipmh-xslt" "list" .secretAndConfigMapMounts) }}
+            {{- if eq (include "hasItemInList" (dict "item" "oaipmh-xslt" "list" .optionalVolumesSecretsAndConfigMapsMounts)) "true" }}
             - name: external-xslt
               mountPath: /opt/payara/xslt/
             {{- end }}
-            {{- if include "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts) }}
+            {{- if eq (include "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts)) "true" }}
             - name: rar-dir
               mountPath: /opt/payara/rar/
             {{- end}}
         {{- if .startupDependencies }}
-
         - name: init-{{ $.Values.environment }}-wait-for-dependent-svc-availability
           image: {{ $.Values.images.initContainers.curl }}
           command:
@@ -145,7 +146,7 @@ spec:
               value: "Present Working Dilemma"
             {{- if $.Values.elasticAPM.enabled }}
             - name: ELASTIC_APM_LOG_SENDING
-              value:  "{{ $.Values.elasticAPM.apm.apmLogSending }}"
+              value: "{{ $.Values.elasticAPM.apm.apmLogSending }}"
             - name: ELASTIC_APM_ENVIRONMENT
               value: {{ $.Values.environment }}
             - name: ELASTIC_APM_SERVER_URL
@@ -171,35 +172,47 @@ spec:
           {{- end }}
           volumeMounts:
           {{- if .mountInstrumentStorage }}
-          {{- range $.Values.instrumentStorage }}
-          - name: {{ .name }}
-            mountPath: {{ .mountPath }}
-            readOnly: {{ .readOnly }}
+          {{- range $.Values.instrumentStorage.storageList }}
+            - name: {{ .name }}
+              {{- if $.Values.instrumentStorage.mountPrefix }}
+              mountPath: {{$.Values.instrumentStorage.mountPrefix}}{{ .mountPath }}
+              {{- else }}
+              mountPath: {{ .mountPath }}
+              {{- end }}
+              readOnly: {{ .readOnly }}
           {{- end }}
           {{- end }}
-          - name: shared-deployments-dir
-            mountPath: /opt/payara/deployments/
-          - name: shared-libs-dir
-            mountPath: /opt/payara/libs/
-          {{- if include "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts) }}
-          - name: rar-dir
-            mountPath: /opt/payara/rar/
+            - name: shared-deployments-dir
+              mountPath: /opt/payara/deployments/
+            - name: shared-libs-dir
+              mountPath: /opt/payara/libs/
+          {{- if eq (include "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts)) "true" }}
+            - name: rar-dir
+              mountPath: /opt/payara/rar/
           {{- end}}
-          {{- if include "hasItemInList" (dict "item" "oaipmh-xslt" "list" .secretAndConfigMapMounts) }}
-          - name: external-xslt
-            mountPath: /opt/payara/xslt/
+          {{- if eq (include "hasItemInList" (dict "item" "oaipmh-xslt" "list" .optionalVolumesSecretsAndConfigMapsMounts)) "true" }}
+            - name: external-xslt
+              mountPath: /opt/payara/xslt/
           {{- end}}
+          {{- if eq (include "hasItemInList" (dict "item" "cache-dir" "list" .optionalVolumesSecretsAndConfigMapsMounts)) "true" }}
+            - name: cache-dir
+              mountPath: /opt/{{.name}}/cache/
+          {{- end }}
       restartPolicy: Always
       volumes:
         - name: shared-deployments-dir
-          emptyDir: {}
+          emptyDir: { }
         - name: shared-libs-dir
-          emptyDir: {}
-        {{- if include "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts) }}
+          emptyDir: { }
+        {{- if eq (include "hasItemInList" (dict "item" "cache-dir" "list" .optionalVolumesSecretsAndConfigMapsMounts)) "true" }}
+        - name: cache-dir
+          emptyDir: { }
+        {{- end }}
+        {{- if eq (include "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts)) "true" }}
         - name: rar-dir
-          emptyDir: {}
+          emptyDir: { }
         {{- end}}
-        {{- if include "hasItemInList" (dict "item" "setup-properties" "list" .secretAndConfigMapMounts) }}
+        {{- if eq (include "hasItemInList" (dict "item" "setup-properties" "list" .optionalVolumesSecretsAndConfigMapsMounts)) "true" }}
         - name: setup-properties
           secret:
             secretName: {{ $.Values.setupPropertiesSecretName }}-{{ $.Values.environment }}
@@ -207,7 +220,7 @@ spec:
               - key: {{.name}}
                 path: setup.properties
         {{- end}}
-        {{- if include "hasItemInList" (dict "item" "run-properties" "list" .secretAndConfigMapMounts) }}
+        {{- if eq (include "hasItemInList" (dict "item" "run-properties" "list" .optionalVolumesSecretsAndConfigMapsMounts)) "true" }}
         - name: run-properties
           secret:
             secretName: {{ $.Values.runPropertiesSecretMapName }}-{{ $.Values.environment }}
@@ -215,21 +228,21 @@ spec:
               - key: {{.name}}
                 path: run.properties
         {{- end }}
-        {{- if include "hasItemInList" (dict "item" "logback" "list" .secretAndConfigMapMounts) }}
+        {{- if eq (include "hasItemInList" (dict "item" "logback" "list" .optionalVolumesSecretsAndConfigMapsMounts)) "true" }}
         - name: logback-xml
           configMap:
             name: {{ $.Values.logbackConfigMapName }}-{{ $.Values.environment }}
             items:
-            - key: {{.name}}
-              path: logback.xml
+              - key: {{.name}}
+                path: logback.xml
         {{- end }}
-        {{- if include "hasItemInList" (dict "item" "oaipmh-xslt" "list" .secretAndConfigMapMounts) }}
+        {{- if eq (include "hasItemInList" (dict "item" "oaipmh-xslt" "list" .optionalVolumesSecretsAndConfigMapsMounts)) "true" }}
         - name: external-xslt
           configMap:
             name: {{ $.Values.oaipmhXSLTConfigMapName }}-{{ $.Values.environment }}
         {{- end }}
         {{- if .mountInstrumentStorage }}
-        {{- range $.Values.instrumentStorage }}
+        {{- range $.Values.instrumentStorage.storageList }}
         - name: {{ .name }}
         {{- if .nfs }}
           nfs:
@@ -237,5 +250,5 @@ spec:
           {{- end }}
         {{- end }}
         {{- end }}
-status: {}
+status: { }
 {{- end }}

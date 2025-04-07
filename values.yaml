@@ -42,6 +42,8 @@ oaipmhXSLTConfigMapName: "icat-core-oaipmh-xslt"
 logbackConfigMapName: "icat-core-logback"
 brokerConfigSecretName: "icat-core-broker-config"
 
+deploymentPriorityClassName: "icat-priority"
+
 elasticAPM:
   enabled: true
   apm:
@@ -74,7 +76,7 @@ components:
       failureThreshold: 1
       periodSeconds: 100
     mountInstrumentStorage: false
-    secretAndConfigMapMounts:
+    optionalVolumesSecretsAndConfigMapsMounts:
       - run-properties
       - setup-properties
     additionalArtifacts:
@@ -95,7 +97,7 @@ components:
       failureThreshold: 1
       periodSeconds: 25
     mountInstrumentStorage: false
-    secretAndConfigMapMounts:
+    optionalVolumesSecretsAndConfigMapsMounts:
       - run-properties
       - setup-properties
       - logback
@@ -118,7 +120,7 @@ components:
       failureThreshold: 1
       periodSeconds: 100
     mountInstrumentStorage: false
-    secretAndConfigMapMounts:
+    optionalVolumesSecretsAndConfigMapsMounts:
       - run-properties
       - setup-properties
     additionalArtifacts:
@@ -139,7 +141,7 @@ components:
       failureThreshold: 1
       periodSeconds: 100
     mountInstrumentStorage: false
-    secretAndConfigMapMounts:
+    optionalVolumesSecretsAndConfigMapsMounts:
       - run-properties
       - setup-properties
       - logback
@@ -170,7 +172,7 @@ components:
       failureThreshold: 1
       periodSeconds: 100
     mountInstrumentStorage: false
-    secretAndConfigMapMounts:
+    optionalVolumesSecretsAndConfigMapsMounts:
       - run-properties
       - setup-properties
       - logback
@@ -207,19 +209,24 @@ components:
         port: 8080
       failureThreshold: 1
       periodSeconds: 100
-    mountInstrumentStorage: true
-    secretAndConfigMapMounts:
+    mountInstrumentStorage: false
+    optionalVolumesSecretsAndConfigMapsMounts:
       - run-properties
       - setup-properties
+      - logback
+      - cache-dir
     additionalArtifacts:
       - elasticAPM
       - idsStorageFile
+      - activeMQRAR
     startupDependencies:
       - name: "icat-server"
         path: "/icat/version/"
         port: 8080
 
 instrumentStorage:
+  mountPrefix: "/data"
+  storageList:
   - name: bl01 # NCD-SWEET
     mountPath: /beamlines/bl01
     readOnly: true

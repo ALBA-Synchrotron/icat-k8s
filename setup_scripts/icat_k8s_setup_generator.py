@@ -131,7 +131,6 @@ match component:
         broker_props: dict = get_broker_props()
 
         jms_pool_commands: list = create_jms_connection_pool(broker_props, "jms/CustomConnectionFactory")
-
         asadmin_commands.extend(jms_pool_commands)
 
         icat_jms_topic: str = create_jms_resource("jakarta.jms.Topic", "jms/ICAT/Topic")
@@ -166,6 +165,57 @@ match component:
         deploy(files=overwrite_files,
                jms_topic_connection_factory=icat_properties.get("jms.topicConnectionFactory"),
                target=setup_props.get("db.target"), logging=setup_props.get("db.logging"), secure=secure)
+    case "ids.server":
+        broker_props: dict = get_broker_props()
+
+        prop_list: list = ["icat.url", "plugin.zipMapper.class", "plugin.main.class", "cache.dir",
+                           "preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds",
+                           "reader",
+                           "maxIdsInQuery"]
+        run_props: dict = get_setup_parameters(prop_name, prop_list)
+
+        # Cache dir is only mounted in the final container, not in the initContainer
+        if not os.path.exists(os.path.expandvars(run_props.get("cache.dir"))) and 5 == 6:
+            sys.exit(f"Please create directory {run_props.get("cache.dir")} as specified in run.properties")
+
+        if run_props.get("plugin.archive.class"):
+            if not run_props.get("startArchivingLevel1024bytes"): sys.exit(
+                "startArchivingLevel1024bytes is not set in run.properties")
+            if not run_props.get("stopArchivingLevel1024bytes"): sys.exit(
+                "stopArchivingLevel1024bytes is not set in run.properties")
+            if not run_props.get("tidyBlockSize"): sys.exit("tidyBlockSize is not set in ids.properties")
+            if not run_props.get("storageUnit"): sys.exit("storageUnit is not set in run.properties")
+            if run_props["storageUnit"].lower == "dataset":
+                if not (run_props.get("delayDatasetWritesSeconds")):
+                    sys.exit("delayDatasetWritesSeconds is not set in run.properties")
+            if run_props["storageUnit"].lower == "datafile":
+                if not (run_props.get("delayDatafileOperationsSeconds")):
+                    sys.exit("delayDatafileOperationsSeconds is not set in run.properties")
+
+        if int(run_props.get("filesCheck.parallelCount", 0)) > 0:
+            if not run_props.get("filesCheck.gapSeconds"): sys.exit(
+                "filesCheck.gapSeconds is not set in run.properties")
+            if not run_props.get("filesCheck.lastIdFile"): sys.exit(
+                "filesCheck.lastIdFile is not set in run.properties")
+            parent = os.path.dirname(os.path.expandvars(run_props["filesCheck.lastIdFile"]))
+            if not os.path.exists(parent):
+                sys.exit(f"Please create directory {parent} for filesCheck.lastIdFile specified in run.properties")
+            if not run_props.get("filesCheck.errorLog"): sys.exit("filesCheck.errorLog is not set in run.properties")
+            parent = os.path.dirname(os.path.expandvars(run_props["filesCheck.errorLog"]))
+            if not os.path.exists(parent):
+                sys.exit(f"Please create directory {parent} for filesCheck.errorLog specified in run.properties")
+            if not run_props.get("reader"): sys.exit("reader is not set in run.properties")
+
+        jms_pool_commands: list = create_jms_connection_pool(broker_props, "jms/CustomConnectionFactory")
+        asadmin_commands.extend(jms_pool_commands)
+
+        icat_jms_log: str = create_jms_resource("jakarta.jms.Topic", "jms/ICAT/log")
+        asadmin_commands.append(icat_jms_log)
+
+        if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
+
+        deploy(files=overwrite_files,
+               jms_topic_connection_factory=run_props.get("jms.topicConnectionFactory"))
     case _:
         print(f"Unknown component: {component}")
         exit(1)
