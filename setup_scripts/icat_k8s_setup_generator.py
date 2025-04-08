@@ -2,8 +2,8 @@ import os
 import sys
 
 from icat_k8s_setup_utils import get_arguments, register_db, create_jms_resource_micro, get_properties, \
-    deploy, get_setup_parameters, create_jms_connection_pool, get_broker_props, load_libraries
-from setup_scripts.icat_k8s_setup_utils import create_jms_resource_server_full
+    deploy, get_setup_parameters, create_jms_connection_pool, get_broker_props, load_libraries, create_jms_resource_server_full
+
 
 args: dict = get_arguments()
 component: str = args["component"]
