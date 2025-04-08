@@ -1,4 +1,4 @@
-{{- if .Values.broker}}
+{{- if .Values.broker.enabled}}
 ---
 apiVersion: apps/v1
 kind: StatefulSet

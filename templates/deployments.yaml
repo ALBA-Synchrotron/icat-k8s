@@ -42,6 +42,8 @@ spec:
           env:
             - name: DASH_PWD
               value: "Present Working Dilemma"
+            - name: CONTAINER_TYPE
+              value: {{ lower .containerType }}
             {{- if eq (include "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts)) "true" }}
             - name: BROKER_USERNAME
               valueFrom:
@@ -121,7 +123,12 @@ spec:
 
         {{- end }}
       containers:
-        - image: {{ $.Values.images.container }}
+        - name: icat-core-{{ .name}}-{{ $.Values.environment }}
+          {{- if eq .containerType "serverFull" }}
+          image: {{ $.Values.images.container.serverFull }}
+          {{- else }}
+          image: {{ $.Values.images.container.micro }}
+          {{- end}}
           imagePullPolicy: Always
           {{- if .containerSecurityContext}}
           securityContext:
@@ -149,6 +156,10 @@ spec:
           env:
             - name: DASH_PWD
               value: "Present Working Dilemma"
+            {{- if eq .containerType "serverFull" }}
+            - name: POSTBOOT_COMMANDS
+              value: /opt/payara/deployments/post_boot_asadmin_commands
+            {{- end}}
             {{- if $.Values.elasticAPM.enabled }}
             - name: ELASTIC_APM_LOG_SENDING
               value: "{{ $.Values.elasticAPM.apm.apmLogSending }}"
@@ -164,9 +175,13 @@ spec:
                   name: {{ $.Values.elasticAPM.apm.secretTokenSecretName }}
                   key: token
             {{- end }}
-          name: icat-core-{{ .name}}-{{ $.Values.environment }}
           ports:
+          {{- if eq .containerType "serverFull" }}
+            - containerPort: 7676
+              name: openmq
+          {{- end}}
             - containerPort: 8080
+              name: http
           {{- if .resources }}
           resources:
             {{- toYaml .resources | nindent 12 }}

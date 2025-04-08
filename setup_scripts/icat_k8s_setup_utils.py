@@ -91,10 +91,21 @@ def create_jms_connection_pool(props: dict, name: str, rar_dir: str = "/opt/paya
     return ret
 
 
-def create_jms_resource(resource_type: str, name: str, rar_name: str = "activemq-rar") -> str:
+def create_jms_resource_micro(resource_type: str, name: str, rar_name: str = "activemq-rar") -> str:
     physical_name: str = name.replace("jms/", "").replace("/", "")
     return f"create-admin-object --raname {rar_name} --restype {resource_type} --property PhysicalName={physical_name} {name}"
 
+
+def load_libraries(lib_dir: str = "/opt/payara/lib") -> list:
+    ret: list = []
+    for lib in os.listdir(lib_dir):
+        if lib.endswith(".jar"):
+            ret.append(f"add-library --type app {lib_dir}/{lib}")
+    return ret
+
+
+def create_jms_resource_server_full(resource_type: str, name: str) -> str:
+    return f"create-jms-resource --restype {resource_type} {name}"
 
 def get_properties(file_name: str, needed) -> dict:
     """Read properties files and check that the properties in the needed list are present"""

@@ -13,7 +13,12 @@ metadata:
   name: icat-core-{{ .name}}-service-{{ $.Values.environment }}
 spec:
   ports:
-    - name: "8080"
+    {{- if eq .containerType "serverFull" }}
+    - name: "openmq"
+      port: 7676
+      targetPort: 7676
+    {{- end}}
+    - name: "http"
       port: 8080
       targetPort: 8080
   selector:
@@ -25,7 +30,7 @@ spec:
 status:
   loadBalancer: { }
 {{- end }}
-{{- if .Values.broker}}
+{{- if .Values.broker.enabled}}
 ---
 apiVersion: v1
 kind: Service
