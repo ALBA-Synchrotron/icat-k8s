@@ -96,7 +96,7 @@ def create_jms_resource_micro(resource_type: str, name: str, rar_name: str = "ac
     return f"create-admin-object --raname {rar_name} --restype {resource_type} --property PhysicalName={physical_name} {name}"
 
 
-def load_libraries(lib_dir: str = "/opt/payara/lib") -> list:
+def load_libraries(lib_dir: str = "/opt/payara/libs") -> list:
     ret: list = []
     for lib in os.listdir(lib_dir):
         if lib.endswith(".jar"):
