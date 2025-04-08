@@ -64,6 +64,14 @@ spec:
           readinessProbe:
             {{- toYaml .Values.broker.readinessProbe | nindent 12 }}
           {{- end }}
+          {{- if .Values.broker.readinessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.broker.livenessProbe | nindent 12 }}
+          {{- end }}
+      {{- if $.Values.imagePullSecretName}}
+      imagePullSecrets:
+        - name: {{ $.Values.imagePullSecretName }}
+      {{- end }}
       restartPolicy: Always
 status: { }
 {{- end }}

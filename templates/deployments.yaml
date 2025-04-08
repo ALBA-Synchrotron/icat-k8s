@@ -20,10 +20,10 @@ spec:
       tier: core
       component: {{ .name }}
       release: {{ $.Release.Name }}
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
+  #strategy:
+  #  type: RollingUpdate
+  #  rollingUpdate:
+  #    maxUnavailable: 1
   template:
     metadata:
       labels:
@@ -123,6 +123,10 @@ spec:
       containers:
         - image: {{ $.Values.images.container }}
           imagePullPolicy: Always
+          {{- if .containerSecurityContext}}
+          securityContext:
+            {{- toYaml .containerSecurityContext | nindent 12 }}
+          {{- end}}
           command:
             # The creation of the glassfish-acc.xml is necessary for the ICAT server to run as otherwise will
             # fail to detect the container type and will not start (see following file, function at line 27):
@@ -130,6 +134,7 @@ spec:
             - "sh"
             - "-c"
             - |
+
               touch /opt/payara/glassfish-acc.xml && \
               java \
               {{- if $.Values.elasticAPM.enabled }}
@@ -170,6 +175,10 @@ spec:
           readinessProbe:
             {{- toYaml .readinessProbe | nindent 12 }}
           {{- end }}
+          {{- if .livenessProbe }}
+          livenessProbe:
+            {{- toYaml .livenessProbe | nindent 12 }}
+          {{- end }}
           volumeMounts:
           {{- if .mountInstrumentStorage }}
           {{- range $.Values.instrumentStorage.storageList }}
@@ -199,6 +208,10 @@ spec:
               mountPath: /opt/{{.name}}/cache/
           {{- end }}
       restartPolicy: Always
+      {{- if $.Values.imagePullSecretName}}
+      imagePullSecrets:
+        - name: {{ $.Values.imagePullSecretName }}
+      {{- end }}
       volumes:
         - name: shared-deployments-dir
           emptyDir: { }
