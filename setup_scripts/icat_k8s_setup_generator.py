@@ -10,7 +10,8 @@ component: str = args["component"]
 
 prop_name: str = "run.properties"
 overwrite_files: list = [[prop_name, "WEB-INF/classes"]]
-asadmin_commands: list = []
+post_boot_asadmin_commands: list = []
+pre_boot_asadmin_commands: list = []
 container_type: str = os.getenv("CONTAINER_TYPE")
 
 
@@ -23,7 +24,7 @@ match component:
         prop_list: list = ["db.driver", "db.url", "db.username", "db.password"]
         setup_props: dict = get_setup_parameters("setup.properties", prop_list)
         db_commands: list = register_db(setup_props, "authn_db")
-        asadmin_commands.extend(db_commands)
+        post_boot_asadmin_commands.extend(db_commands)
 
         if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
 
@@ -134,25 +135,25 @@ match component:
         if container_type == "micro":
             broker_props: dict = get_broker_props()
             jms_pool_commands: list = create_jms_connection_pool(broker_props, "jms/CustomConnectionFactory")
-            asadmin_commands.extend(jms_pool_commands)
+            post_boot_asadmin_commands.extend(jms_pool_commands)
 
             icat_jms_topic: str = create_jms_resource_micro("jakarta.jms.Topic", "jms/ICAT/Topic")
-            asadmin_commands.append(icat_jms_topic)
+            post_boot_asadmin_commands.append(icat_jms_topic)
 
             icat_jms_log: str = create_jms_resource_micro("jakarta.jms.Topic", "jms/ICAT/log")
-            asadmin_commands.append(icat_jms_log)
+            post_boot_asadmin_commands.append(icat_jms_log)
         elif container_type == "serverfull":
             libs: list = load_libraries()
-            asadmin_commands.extend(libs)
+            post_boot_asadmin_commands.extend(libs)
 
             elastic_apm: list = create_elastic_jvm_options()
-            asadmin_commands.extend(elastic_apm)
+            pre_boot_asadmin_commands.extend(elastic_apm)
 
             icat_jms_topic: str = create_jms_resource_server_full("jakarta.jms.Topic", "jms/ICAT/Topic")
-            asadmin_commands.append(icat_jms_topic)
+            post_boot_asadmin_commands.append(icat_jms_topic)
 
             icat_jms_log: str = create_jms_resource_server_full("jakarta.jms.Topic", "jms/ICAT/log")
-            asadmin_commands.append(icat_jms_log)
+            post_boot_asadmin_commands.append(icat_jms_log)
 
         prop_list: list = ["lifetimeMinutes", "rootUserNames", "authn.list", "notification.list", "log.list"]
         icat_properties: dict = get_properties(prop_name, prop_list)
@@ -170,7 +171,7 @@ match component:
                                                  ["db.driver", "db.url", "db.username", "db.password", "secure", "home",
                                                   "container", "port"])
         db_commands: list = register_db(setup_props, "icat")
-        asadmin_commands.extend(db_commands)
+        post_boot_asadmin_commands.extend(db_commands)
 
         if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
 
@@ -222,16 +223,19 @@ match component:
         if container_type == "micro":
             broker_props: dict = get_broker_props()
             jms_pool_commands: list = create_jms_connection_pool(broker_props, "jms/CustomConnectionFactory")
-            asadmin_commands.extend(jms_pool_commands)
+            post_boot_asadmin_commands.extend(jms_pool_commands)
 
             icat_jms_log: str = create_jms_resource_micro("jakarta.jms.Topic", "jms/ICAT/log")
-            asadmin_commands.append(icat_jms_log)
+            post_boot_asadmin_commands.append(icat_jms_log)
         elif container_type == "serverfull":
             elastic_apm: list = create_elastic_jvm_options()
-            asadmin_commands.extend(elastic_apm)
+            pre_boot_asadmin_commands.extend(elastic_apm)
+
+            libs: list = load_libraries()
+            post_boot_asadmin_commands.extend(libs)
 
             icat_jms_log: str = create_jms_resource_server_full("jakarta.jms.Topic", "jms/ICAT/log")
-            asadmin_commands.append(icat_jms_log)
+            post_boot_asadmin_commands.append(icat_jms_log)
 
 
         if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
@@ -242,6 +246,11 @@ match component:
         print(f"Unknown component: {component}")
         exit(1)
 
+
+with open("pre_boot_asadmin_commands", "w") as f:
+    f.write("\n".join(pre_boot_asadmin_commands))
+    f.write("\n")
+
 with open("post_boot_asadmin_commands", "w") as f:
-    f.write("\n".join(asadmin_commands))
+    f.write("\n".join(post_boot_asadmin_commands))
     f.write("\n")

@@ -90,7 +90,7 @@ components:
         path: "/authn.anon/version"
         port: 8080
       failureThreshold: 1
-      periodSeconds: 5
+      periodSeconds: 2
     livenessProbe:
       httpGet:
         path: "/authn.anon/version"
@@ -117,7 +117,7 @@ components:
         path: "/authn.db/version"
         port: 8080
       failureThreshold: 1
-      periodSeconds: 5
+      periodSeconds: 2
     livenessProbe:
       httpGet:
         path: "/authn.db/version"
@@ -146,7 +146,7 @@ components:
         path: "/authn.oidc/version"
         port: 8080
       failureThreshold: 1
-      periodSeconds: 5
+      periodSeconds: 2
     livenessProbe:
       httpGet:
         path: "/authn.oidc/version"
@@ -173,7 +173,7 @@ components:
         path: "/oaipmh/version"
         port: 8080
       failureThreshold: 1
-      periodSeconds: 5
+      periodSeconds: 2
     livenessProbe:
       httpGet:
         path: "/oaipmh/version"
@@ -210,7 +210,7 @@ components:
         path: "/icat/version/"
         port: 8080
       failureThreshold: 1
-      periodSeconds: 5
+      periodSeconds: 2
     livenessProbe:
       httpGet:
         path: "/icat/version/"
@@ -253,7 +253,7 @@ components:
         path: "/ids/ping/"
         port: 8080
       failureThreshold: 1
-      periodSeconds: 5
+      periodSeconds: 2
     livenessProbe:
       httpGet:
         path: "/ids/ping/"

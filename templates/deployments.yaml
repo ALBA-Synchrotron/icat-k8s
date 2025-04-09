@@ -133,7 +133,7 @@ spec:
                 if [ "$all_ok" = true ]; then
                   break
                 fi
-                sleep 5
+                sleep 2
               done
 
         {{- end }}
@@ -187,6 +187,8 @@ spec:
             {{- if eq .containerType "serverFull" }}
             - name: POSTBOOT_COMMANDS
               value: /opt/payara/deployments/post_boot_asadmin_commands
+            - name: PREBOOT_COMMANDS
+              value: /opt/payara/deployments/pre_boot_asadmin_commands
             {{- end}}
             {{- if $.Values.elasticAPM.enabled }}
             - name: ELASTIC_APM_LOG_SENDING
@@ -204,10 +206,6 @@ spec:
                   key: token
             {{- end }}
           ports:
-          {{- if eq .containerType "serverFull" }}
-            - containerPort: 7676
-              name: openmq
-          {{- end}}
             - containerPort: 8080
               name: http
           {{- if .resources }}
