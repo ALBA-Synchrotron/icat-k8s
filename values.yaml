@@ -236,7 +236,7 @@ components:
         port: 8080
   # ids.server -- ICAT DATA SERVICE (IDS) SERVER COMPONENT
   - name: "ids-server"
-    containerType: "micro"
+    containerType: "serverFull"
     repoKey: "ids.server"
     version: "2.1.1"
     replicas: 1
@@ -268,7 +268,6 @@ components:
     additionalArtifacts:
       - elasticAPM
       - idsStorageFile
-      - activeMQRAR
     startupDependencies:
       - name: "icat-server"
         path: "/icat/version/"

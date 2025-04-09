@@ -44,6 +44,21 @@ spec:
               value: "Present Working Dilemma"
             - name: CONTAINER_TYPE
               value: {{ lower .containerType }}
+            {{- if $.Values.elasticAPM.enabled }}
+            - name: ELASTIC_APM_LOG_SENDING
+              value: "{{ $.Values.elasticAPM.apm.apmLogSending }}"
+            - name: ELASTIC_APM_ENVIRONMENT
+              value: {{ $.Values.environment }}
+            - name: ELASTIC_APM_SERVER_URL
+              value: {{ $.Values.elasticAPM.apm.serverUrl }}
+            - name: APM_SERVICE_NAME
+              value: {{$.Values.elasticAPM.apm.serviceNamePrefix}}-{{ .name}}-{{ $.Values.environment }}
+            - name: ELASTIC_APM_SECRET_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.elasticAPM.apm.secretTokenSecretName }}
+                  key: token
+            {{- end }}
             {{- if eq (include "hasItemInList" (dict "item" "activeMQRAR" "list" .additionalArtifacts)) "true" }}
             - name: BROKER_USERNAME
               valueFrom:
@@ -135,6 +150,7 @@ spec:
             {{- toYaml .containerSecurityContext | nindent 12 }}
           {{- end}}
           command:
+            {{- if eq .containerType "micro" }}
             # The creation of the glassfish-acc.xml is necessary for the ICAT server to run as otherwise will
             # fail to detect the container type and will not start (see following file, function at line 27):
             # https://github.com/icatproject/icat.utils/blob/master/src/main/java/org/icatproject/utils/ContainerGetter.java
@@ -153,6 +169,18 @@ spec:
               --addlibs /opt/payara/libs/ \
               --postbootcommandfile /opt/payara/deployments/post_boot_asadmin_commands \
               --deploydir /opt/payara/deployments/
+            {{- else}}
+                        # The creation of the glassfish-acc.xml is necessary for the ICAT server to run as otherwise will
+            # fail to detect the container type and will not start (see following file, function at line 27):
+            # https://github.com/icatproject/icat.utils/blob/master/src/main/java/org/icatproject/utils/ContainerGetter.java
+            - "sh"
+            - "-c"
+            - |
+              touch /opt/payara/glassfish-acc.xml && \
+
+
+              /opt/payara/scripts/entrypoint.sh
+            {{- end}}
           env:
             - name: DASH_PWD
               value: "Present Working Dilemma"

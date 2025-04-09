@@ -2,8 +2,8 @@ import os
 import sys
 
 from icat_k8s_setup_utils import get_arguments, register_db, create_jms_resource_micro, get_properties, \
-    deploy, get_setup_parameters, create_jms_connection_pool, get_broker_props, load_libraries, create_jms_resource_server_full
-
+    deploy, get_setup_parameters, create_jms_connection_pool, get_broker_props, load_libraries, \
+    create_jms_resource_server_full, create_elastic_jvm_options
 
 args: dict = get_arguments()
 component: str = args["component"]
@@ -145,6 +145,9 @@ match component:
             libs: list = load_libraries()
             asadmin_commands.extend(libs)
 
+            elastic_apm: list = create_elastic_jvm_options()
+            asadmin_commands.extend(elastic_apm)
+
             icat_jms_topic: str = create_jms_resource_server_full("jakarta.jms.Topic", "jms/ICAT/Topic")
             asadmin_commands.append(icat_jms_topic)
 
@@ -178,8 +181,6 @@ match component:
                jms_topic_connection_factory=icat_properties.get("jms.topicConnectionFactory"),
                target=setup_props.get("db.target"), logging=setup_props.get("db.logging"), secure=secure)
     case "ids.server":
-        broker_props: dict = get_broker_props()
-
         prop_list: list = ["icat.url", "plugin.zipMapper.class", "plugin.main.class", "cache.dir",
                            "preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds",
                            "reader",
@@ -218,11 +219,20 @@ match component:
                 sys.exit(f"Please create directory {parent} for filesCheck.errorLog specified in run.properties")
             if not run_props.get("reader"): sys.exit("reader is not set in run.properties")
 
-        jms_pool_commands: list = create_jms_connection_pool(broker_props, "jms/CustomConnectionFactory")
-        asadmin_commands.extend(jms_pool_commands)
+        if container_type == "micro":
+            broker_props: dict = get_broker_props()
+            jms_pool_commands: list = create_jms_connection_pool(broker_props, "jms/CustomConnectionFactory")
+            asadmin_commands.extend(jms_pool_commands)
 
-        icat_jms_log: str = create_jms_resource_micro("jakarta.jms.Topic", "jms/ICAT/log")
-        asadmin_commands.append(icat_jms_log)
+            icat_jms_log: str = create_jms_resource_micro("jakarta.jms.Topic", "jms/ICAT/log")
+            asadmin_commands.append(icat_jms_log)
+        elif container_type == "serverfull":
+            elastic_apm: list = create_elastic_jvm_options()
+            asadmin_commands.extend(elastic_apm)
+
+            icat_jms_log: str = create_jms_resource_server_full("jakarta.jms.Topic", "jms/ICAT/log")
+            asadmin_commands.append(icat_jms_log)
+
 
         if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
 
