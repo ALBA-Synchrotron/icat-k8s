@@ -79,9 +79,9 @@ def create_elastic_jvm_options(elastic_apm_jar_path: str = "/opt/payara/libs/ela
         packages_str = "es.cells.icat.authn_alba,org.icatproject.authn_anon,org.icatproject.authn_db,org.icatproject.icat_oaipmh,org.icatproject.exposed,org.icatproject.ids"
 
     ret.append(f"create-jvm-options '-javaagent\:{elastic_apm_jar_path}'")
-    ret.append(f"create-jvm-options '-Delastic.apm.service_name={os.getenv('APM_SERVICE_NAME')}")
-    ret.append(f"create-jvm-options '-Delastic.apm.application_packages={packages_str}")
-    ret.append(f"create-jvm-options '-Delastic.apm.server_url={os.getenv('ELASTIC_APM_SERVER_URL')}")
+    ret.append(f"create-jvm-options '-Delastic.apm.service_name={os.getenv('APM_SERVICE_NAME')}'")
+    ret.append(f"create-jvm-options '-Delastic.apm.application_packages={packages_str}'")
+    ret.append(f"create-jvm-options '-Delastic.apm.server_url={os.getenv('ELASTIC_APM_SERVER_URL')}'")
     return ret
 
 
