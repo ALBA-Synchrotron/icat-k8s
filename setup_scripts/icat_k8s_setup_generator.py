@@ -221,13 +221,13 @@ match component:
             jms_pool_commands: list = create_jms_connection_pool(broker_props, "jms/CustomConnectionFactory")
             post_boot_asadmin_commands.extend(jms_pool_commands)
 
-            icat_jms_log: str = create_jms_resource_micro("jakarta.jms.Topic", "jms/ICAT/log")
+            icat_jms_log: str = create_jms_resource_micro("jakarta.jms.Topic", "jms/IDS/log")
             post_boot_asadmin_commands.append(icat_jms_log)
         elif container_type == "serverfull":
             libs: list = load_libraries()
             post_boot_asadmin_commands.extend(libs)
 
-            icat_jms_log: str = create_jms_resource_server_full("jakarta.jms.Topic", "jms/ICAT/log")
+            icat_jms_log: str = create_jms_resource_server_full("jakarta.jms.Topic", "jms/IDS/log")
             post_boot_asadmin_commands.append(icat_jms_log)
 
         if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
