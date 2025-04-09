@@ -177,8 +177,6 @@ spec:
             - "-c"
             - |
               touch /opt/payara/glassfish-acc.xml && \
-
-
               /opt/payara/scripts/entrypoint.sh
             {{- end}}
           env:
@@ -187,10 +185,12 @@ spec:
             {{- if eq .containerType "serverFull" }}
             - name: POSTBOOT_COMMANDS
               value: /opt/payara/deployments/post_boot_asadmin_commands
-            - name: PREBOOT_COMMANDS
-              value: /opt/payara/deployments/pre_boot_asadmin_commands
             {{- end}}
             {{- if $.Values.elasticAPM.enabled }}
+            {{- if eq .containerType "serverFull" }}
+            - name: JVM_ARGS
+              value: "{{ include "elasticapmJvmArgs" (dict "component" . "root" $) | trim | nindent 14 }}"
+            {{- end}}
             - name: ELASTIC_APM_LOG_SENDING
               value: "{{ $.Values.elasticAPM.apm.apmLogSending }}"
             - name: ELASTIC_APM_ENVIRONMENT

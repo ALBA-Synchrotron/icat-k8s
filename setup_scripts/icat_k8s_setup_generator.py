@@ -3,7 +3,7 @@ import sys
 
 from icat_k8s_setup_utils import get_arguments, register_db, create_jms_resource_micro, get_properties, \
     deploy, get_setup_parameters, create_jms_connection_pool, get_broker_props, load_libraries, \
-    create_jms_resource_server_full, create_elastic_jvm_options
+    create_jms_resource_server_full
 
 args: dict = get_arguments()
 component: str = args["component"]
@@ -13,7 +13,6 @@ overwrite_files: list = [[prop_name, "WEB-INF/classes"]]
 post_boot_asadmin_commands: list = []
 pre_boot_asadmin_commands: list = []
 container_type: str = os.getenv("CONTAINER_TYPE")
-
 
 match component:
     case "authn.anon":
@@ -146,9 +145,6 @@ match component:
             libs: list = load_libraries()
             post_boot_asadmin_commands.extend(libs)
 
-            elastic_apm: list = create_elastic_jvm_options()
-            pre_boot_asadmin_commands.extend(elastic_apm)
-
             icat_jms_topic: str = create_jms_resource_server_full("jakarta.jms.Topic", "jms/ICAT/Topic")
             post_boot_asadmin_commands.append(icat_jms_topic)
 
@@ -228,15 +224,11 @@ match component:
             icat_jms_log: str = create_jms_resource_micro("jakarta.jms.Topic", "jms/ICAT/log")
             post_boot_asadmin_commands.append(icat_jms_log)
         elif container_type == "serverfull":
-            elastic_apm: list = create_elastic_jvm_options()
-            pre_boot_asadmin_commands.extend(elastic_apm)
-
             libs: list = load_libraries()
             post_boot_asadmin_commands.extend(libs)
 
             icat_jms_log: str = create_jms_resource_server_full("jakarta.jms.Topic", "jms/ICAT/log")
             post_boot_asadmin_commands.append(icat_jms_log)
-
 
         if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
 
@@ -245,7 +237,6 @@ match component:
     case _:
         print(f"Unknown component: {component}")
         exit(1)
-
 
 with open("pre_boot_asadmin_commands", "w") as f:
     f.write("\n".join(pre_boot_asadmin_commands))
