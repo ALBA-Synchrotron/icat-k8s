@@ -52,7 +52,7 @@ spec:
             - name: ELASTIC_APM_SERVER_URL
               value: {{ $.Values.elasticAPM.apm.serverUrl }}
             - name: APM_SERVICE_NAME
-              value: {{$.Values.elasticAPM.apm.serviceNamePrefix}}-{{ .name}}-{{ $.Values.environment }}
+              value: {{$.Values.elasticAPM.apm.serviceNamePrefix}}-{{ .name}}
             - name: ELASTIC_APM_SECRET_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -162,7 +162,7 @@ spec:
               java \
               {{- if $.Values.elasticAPM.enabled }}
               -javaagent:/opt/payara/libs/elastic-apm-agent.jar \
-              -Delastic.apm.service_name={{$.Values.elasticAPM.apm.serviceNamePrefix}}-{{ .name}}-{{ $.Values.environment }} \
+              -Delastic.apm.service_name={{$.Values.elasticAPM.apm.serviceNamePrefix}}-{{ .name}} \
               -Delastic.apm.application_packages=es.cells.icat.authn_alba,org.icatproject.authn_anon,org.icatproject.authn_db,org.icatproject.icat_oaipmh,org.icatproject.exposed,org.icatproject.ids \
               {{- end }}
               -jar /opt/payara/payara-micro.jar \
@@ -198,7 +198,7 @@ spec:
             - name: ELASTIC_APM_SERVER_URL
               value: {{ $.Values.elasticAPM.apm.serverUrl }}
             - name: APM_SERVICE_NAME
-              value: {{$.Values.elasticAPM.apm.serviceNamePrefix}}-{{ .name}}-{{ $.Values.environment }}
+              value: {{$.Values.elasticAPM.apm.serviceNamePrefix}}-{{ .name}}
             - name: ELASTIC_APM_SECRET_TOKEN
               valueFrom:
                 secretKeyRef:

@@ -110,5 +110,5 @@ cd /opt/payara/deployments/ && python /opt/payara/deployments/icat_k8s_setup_gen
 {{- define "elasticapmJvmArgs" }}
 {{- $component := .component }}
 {{- $values := .root.Values }}
--javaagent:{{$values.elasticAPM.agentJarPath}} -Delastic.apm.service_name={{$values.elasticAPM.apm.serviceNamePrefix}}-{{$component.name}}-{{ $values.environment }} -Delastic.apm.application_packages={{$values.elasticAPM.packageNames}} -Delastic.apm.server_url={{$values.elasticAPM.apm.serverUrl}} -Delastic.apm.verify_server_cert=false
+-javaagent:{{$values.elasticAPM.agentJarPath}} -Delastic.apm.service_name={{$values.elasticAPM.apm.serviceNamePrefix}}-{{$component.name}} -Delastic.apm.application_packages={{$values.elasticAPM.packageNames}} -Delastic.apm.server_url={{$values.elasticAPM.apm.serverUrl}} -Delastic.apm.verify_server_cert=false
 {{- end}}
