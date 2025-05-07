@@ -42,6 +42,8 @@ spec:
           env:
             - name: DASH_PWD
               value: "Present Working Dilemma"
+            - name: TZ
+              value: {{ $.Values.timezone }}
             - name: CONTAINER_TYPE
               value: {{ lower .containerType }}
             {{- if $.Values.elasticAPM.enabled }}
@@ -182,6 +184,8 @@ spec:
           env:
             - name: DASH_PWD
               value: "Present Working Dilemma"
+            - name: TZ
+              value: {{ $.Values.timezone }}
             {{- if eq .containerType "serverFull" }}
             - name: POSTBOOT_COMMANDS
               value: /opt/payara/deployments/post_boot_asadmin_commands
