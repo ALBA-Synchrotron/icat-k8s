@@ -1,13 +1,21 @@
 FROM registry.cells.es/docker/payara/server-full:6.2025.3-jdk21
 
 ARG NEW_UID=1000
-ARG NEW_GID=1000
+ARG PRIMARY_GID=1000
+ARG EXTRA_GIDS=1001,1002
 
 USER root
 
 # Change UID and GID for payara user to allow NFS mount
-RUN addgroup --gid $NEW_GID badassfish
-RUN adduser --home /opt/payara/ --shell /bin/sh --no-create-home --uid $NEW_UID --gid $NEW_GID --disabled-login --gecos "" badassfish
+RUN addgroup --gid $PRIMARY_GID badassfish
+RUN adduser --home /opt/payara/ --shell /bin/sh --no-create-home --uid $NEW_UID --gid $PRIMARY_GID --disabled-login --gecos "" badassfish
+
+RUN set -eux; \
+    for gid in $(echo "$EXTRA_GIDS" | tr ',' ' '); do \
+        group="g${gid}"; \
+        addgroup --gid "$gid" "$group" || true; \
+        addgroup badassfish "$group"; \
+    done
 
 # Fix permissions
 RUN find / -path /proc -prune -o -user payara -exec chown -R badassfish:badassfish {} \;
