@@ -1,1 +1,1 @@
-yeah yeah nope
+Thanks for installing icat-k8s!

@@ -10,7 +10,7 @@ metadata:
     tier: core
     component: {{ .name }}
     release: {{ $.Release.Name }}
-  name: icat-core-{{ .name}}-service-{{ $.Values.environment }}
+  name: icat-core-{{ .name}}-service-{{ $.Values.environment }}-{{ $.Release.Name }}
 spec:
   ports:
     - name: "http"
@@ -25,33 +25,3 @@ spec:
 status:
   loadBalancer: { }
 {{- end }}
-{{- if .Values.broker.enabled}}
----
-apiVersion: v1
-kind: Service
-metadata:
-  namespace: {{ $.Values.namespace }}
-  labels:
-    app: icat
-    env: {{ $.Values.environment }}
-    tier: core
-    component: broker
-    release: {{ $.Release.Name }}
-  name: icat-core-broker-service-{{ $.Values.environment }}
-spec:
-  ports:
-    - name: "messaging"
-      port: 61616
-      targetPort: 61616
-    - name: "http"
-      port: 8161
-      targetPort: 8161
-  selector:
-    app: icat
-    env: {{ $.Values.environment }}
-    tier: core
-    component: broker
-    release: {{ $.Release.Name }}
-status:
-  loadBalancer: { }
-{{- end}}

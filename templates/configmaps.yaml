@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Values.namespace }}
+  name: icat-core-logback-{{ $.Values.environment }}-{{ $.Release.Name }}
+  labels:
+    app: icat
+    env: {{ $.Values.environment }}
+    tier: core
+    release: {{ $.Release.Name }}
+data:
+{{- range $.Values.components }}
+  {{ .name }}: {{ .logbackXml | quote }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Values.namespace }}
+  name: icat-core-xslt-{{ $.Values.environment }}-{{ $.Release.Name }}
+  labels:
+    app: icat
+    env: {{ $.Values.environment }}
+    tier: core
+    release: {{ $.Release.Name }}
+data:
+{{- range $.Values.components }}
+  {{- if .xslt }}
+  {{- range .xslt }}
+  {{- range $key, $value := . }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end}}
+  {{- end}}
+  {{- end}}
+{{- end }}

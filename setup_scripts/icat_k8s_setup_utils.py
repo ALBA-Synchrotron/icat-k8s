@@ -55,25 +55,8 @@ def register_db(db_params: dict, db_name: str) -> list:
     return ret_commands
 
 
-def get_broker_props() -> dict:
-    ret: dict = {}
-    broker_username: Optional[str] = os.getenv("BROKER_USERNAME")
-    broker_password: Optional[str] = os.getenv("BROKER_PASSWORD")
-    broker_host: Optional[str] = os.getenv("BROKER_HOST")
-
-    if broker_username:
-        ret["username"] = broker_username
-    if broker_password:
-        ret["password"] = broker_password
-    if broker_host:
-        ret["host"] = broker_host
-
-    if not broker_username or not broker_password or not broker_host:
-        sys.exit("BROKER_USERNAME / BROKER_PASSWORD / BROKER_HOST must be set")
-    return ret
-
-
-def create_elastic_jvm_options(elastic_apm_jar_path: str = "/opt/payara/libs/elastic-apm-agent.jar", packages_str: Optional[str]=None) -> list:
+def create_elastic_jvm_options(elastic_apm_jar_path: str = "/opt/payara/libs/elastic-apm-agent.jar",
+                               packages_str: Optional[str] = None) -> list:
     ret: list = []
     if not packages_str:
         packages_str = "es.cells.icat.authn_alba,org.icatproject.authn_anon,org.icatproject.authn_db,org.icatproject.icat_oaipmh,org.icatproject.exposed,org.icatproject.ids"
@@ -118,6 +101,7 @@ def load_libraries(lib_dir: str = "/opt/payara/libs") -> list:
 
 def create_jms_resource_server_full(resource_type: str, name: str) -> str:
     return f"create-jms-resource --restype {resource_type} {name}"
+
 
 def get_properties(file_name: str, needed) -> dict:
     """Read properties files and check that the properties in the needed list are present"""

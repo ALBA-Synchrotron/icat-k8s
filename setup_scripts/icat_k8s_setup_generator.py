@@ -1,8 +1,8 @@
 import os
 import sys
 
-from icat_k8s_setup_utils import get_arguments, register_db, create_jms_resource_micro, get_properties, \
-    deploy, get_setup_parameters, create_jms_connection_pool, get_broker_props, load_libraries, \
+from icat_k8s_setup_utils import get_arguments, register_db, get_properties, \
+    deploy, get_setup_parameters, load_libraries, \
     create_jms_resource_server_full
 
 args: dict = get_arguments()
@@ -132,15 +132,7 @@ match component:
         deploy(files=overwrite_files)
     case "icat.server":
         if container_type == "micro":
-            broker_props: dict = get_broker_props()
-            jms_pool_commands: list = create_jms_connection_pool(broker_props, "jms/CustomConnectionFactory")
-            post_boot_asadmin_commands.extend(jms_pool_commands)
-
-            icat_jms_topic: str = create_jms_resource_micro("jakarta.jms.Topic", "jms/ICAT/Topic")
-            post_boot_asadmin_commands.append(icat_jms_topic)
-
-            icat_jms_log: str = create_jms_resource_micro("jakarta.jms.Topic", "jms/ICAT/log")
-            post_boot_asadmin_commands.append(icat_jms_log)
+            exit(1)
         elif container_type == "serverfull":
             libs: list = load_libraries()
             post_boot_asadmin_commands.extend(libs)
@@ -217,12 +209,7 @@ match component:
             if not run_props.get("reader"): sys.exit("reader is not set in run.properties")
 
         if container_type == "micro":
-            broker_props: dict = get_broker_props()
-            jms_pool_commands: list = create_jms_connection_pool(broker_props, "jms/CustomConnectionFactory")
-            post_boot_asadmin_commands.extend(jms_pool_commands)
-
-            icat_jms_log: str = create_jms_resource_micro("jakarta.jms.Topic", "jms/IDS/log")
-            post_boot_asadmin_commands.append(icat_jms_log)
+            exit(1)
         elif container_type == "serverfull":
             libs: list = load_libraries()
             post_boot_asadmin_commands.extend(libs)

@@ -1,0 +1,137 @@
+{{- if .Values.ingress.enabled}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: icat-core-legacy-wsdl-icat-manager-support-ingress-{{ $.Values.environment }}-{{ $.Release.Name }}
+  labels:
+    app: icat
+    env: {{ $.Values.environment }}
+    tier: core
+    component: ingress-icat-core-legacy-wsdl-icat-manager-support
+    release: {{ $.Release.Name }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /ICATService/$2
+spec:
+  ingressClassName: {{ .Values.ingressClassName }}
+  {{- if .Values.ingress.tlsSecretName}}
+  tls:
+  - hosts:
+    - {{ .Values.ingress.host }}
+    secretName: {{.Values.ingress.tlsSecretName}}
+  {{- end}}
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+        - path: /iws/icat_server/ICATService(/|$)(.*)
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: icat-core-icat-server-service-{{ $.Values.environment }}-{{ $.Release.Name }}
+              port:
+                number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: icat-core-legacy-xsd-icat-manager-support-ingress-test
+  labels:
+    app: icat
+    env: {{ $.Values.environment }}
+    tier: core
+    component: ingress-icat-core-legacy-xsd-icat-manager-support
+    release: {{ $.Release.Name }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /ICATService/$2
+spec:
+  ingressClassName: {{ .Values.ingressClassName }}
+  {{- if .Values.ingress.tlsSecretName}}
+  tls:
+    - hosts:
+      - {{ .Values.ingress.host }}
+      secretName: {{.Values.ingress.tlsSecretName}}
+  {{- end}}
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+        - path: /ICATService(/|$)(.*)
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: icat-core-icat-server-service-{{ $.Values.environment }}-{{ $.Release.Name }}
+              port:
+                number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: icat-core-icat-server-ingress-test
+  labels:
+    app: icat
+    env: test
+    component: ingress-icat-core
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /icat/$2
+spec:
+  ingressClassName: {{ .Values.ingressClassName }}
+  {{- if .Values.ingress.tlsSecretName}}
+  tls:
+    - hosts:
+      - {{ .Values.ingress.host }}
+      secretName: {{.Values.ingress.tlsSecretName}}
+  {{- end}}
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+        - path: /iws/icat_server(/|$)(.*)
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: icat-core-icat-server-service-{{ $.Values.environment }}-{{ $.Release.Name }}
+              port:
+                number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: icat-core-ids-server-ingress-test
+  labels:
+    app: icat
+    env: test
+    component: icat-ingress-ids
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /ids/$2
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: {{ .Values.ingressClassName }}
+  {{- if .Values.ingress.tlsSecretName}}
+  tls:
+    - hosts:
+      - {{ .Values.ingress.host }}
+      secretName: {{.Values.ingress.tlsSecretName}}
+  {{- end}}
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+        - path: /iws/ids(/|$)(.*)
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: icat-core-ids-server-service-{{ $.Values.environment }}-{{ $.Release.Name }}
+              port:
+                number: 8080
+{{- end}}
