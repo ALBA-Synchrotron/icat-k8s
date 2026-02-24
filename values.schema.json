@@ -1,0 +1,465 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "ICAT-k8s Chart Values",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "images",
+    "components"
+  ],
+  "properties": {
+    "ingress": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Whether the Chart should create the Ingress or not",
+          "type": "boolean"
+        },
+        "host": {
+          "type": "string"
+        },
+        "ingressClassName": {
+          "type": "string"
+        },
+        "tlsSecretName": {
+          "type": "string"
+        }
+      }
+    },
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "container",
+        "initContainers"
+      ],
+      "properties": {
+        "container": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "micro",
+            "serverFull"
+          ],
+          "properties": {
+            "micro": {
+              "description": "Full image reference for Payara micro",
+              "type": "string"
+            },
+            "serverFull": {
+              "description": "Full image reference for Payara server full",
+              "type": "string"
+            }
+          }
+        },
+        "initContainers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "python",
+            "curl"
+          ],
+          "properties": {
+            "python": {
+              "description": "Full image reference for a Python image that will be used for running setup scripts",
+              "type": "string"
+            },
+            "curl": {
+              "description": "Full image reference for a curl image that will be used for retrieving app packages",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "imagePullSecretName": {
+      "type": "string"
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rootRepositoryURL",
+        "databaseConnector",
+        "elasticAPM",
+        "idsStorageFile",
+        "icatProjectComponents",
+        "initScripts"
+      ],
+      "properties": {
+        "rootRepositoryURL": {
+          "description": "Root URL of the repository from which fetch artifacts",
+          "type": "string"
+        },
+        "databaseConnector": {
+          "$ref": "#/definitions/artifact"
+        },
+        "elasticAPM": {
+          "$ref": "#/definitions/artifact"
+        },
+        "idsStorageFile": {
+          "$ref": "#/definitions/artifact"
+        },
+        "icatProjectComponents": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "baseArtifactPath"
+          ],
+          "properties": {
+            "baseArtifactPath": {
+              "description": "Base path in which ICAT components are e.g. /org/icatproject/",
+              "type": "string"
+            },
+            "repositoryURL": {
+              "description": "Root URL of the repository from which fetch ICAT application artifacts (if different from the general one)",
+              "type": "string"
+            }
+          }
+        },
+        "initScripts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "url"
+          ],
+          "properties": {
+            "url": {
+              "description": "URL to a repo's folder containing the setup scripts",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "deploymentPriorityClassName": {
+      "description": "https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/",
+      "type": "string"
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "elasticAPM": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "agentJarPath",
+        "packageNames",
+        "apm"
+      ],
+      "properties": {
+        "enabled": {
+          "description": "Enable ElasticAPM integration",
+          "type": "boolean"
+        },
+        "agentJarPath": {
+          "description": "Path in which to store the APM agent's jar",
+          "type": "string"
+        },
+        "packageNames": {
+          "type": "string"
+        },
+        "apm": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "serviceNamePrefix",
+            "serverUrl",
+            "apmLogSending",
+            "secretTokenSecretName",
+            "environment"
+          ],
+          "properties": {
+            "serviceNamePrefix": {
+              "type": "string"
+            },
+            "serverUrl": {
+              "type": "string"
+            },
+            "apmLogSending": {
+              "type": "boolean"
+            },
+            "secretTokenSecretName": {
+              "type": "string"
+            },
+            "environment": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/component"
+      }
+    },
+    "instrumentStorage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mountPrefix": {
+          "type": "string"
+        },
+        "storageList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/instrumentMount"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactPath",
+        "filename",
+        "type"
+      ],
+      "properties": {
+        "artifactPath": {
+          "type": "string"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "repositoryURL": {
+          "description": "Root URL of the repository from which fetch ICAT application artifacts (if different from the general one)",
+          "type": "string"
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "limits": {
+          "$ref": "#/definitions/cpuMem"
+        },
+        "requests": {
+          "$ref": "#/definitions/cpuMem"
+        }
+      }
+    },
+    "cpuMem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cpu": {
+          "type": "string"
+        },
+        "memory": {
+          "type": "string"
+        }
+      }
+    },
+    "httpGet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "port"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "port": {
+          "oneOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "httpGet"
+      ],
+      "properties": {
+        "httpGet": {
+          "$ref": "#/definitions/httpGet"
+        },
+        "failureThreshold": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "periodSeconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "startupDependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "path",
+        "port"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer"
+        }
+      }
+    },
+    "xsltEntry": {
+      "type": "object",
+      "description": "Each item is an object with exactly one filename key mapped to the XSLT content.",
+      "minProperties": 1,
+      "maxProperties": 1,
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "containerType",
+        "repoKey",
+        "version",
+        "replicas"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "containerType": {
+          "type": "string",
+          "enum": [
+            "micro",
+            "serverFull"
+          ]
+        },
+        "repoKey": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "replicas": {
+          "type": "integer"
+        },
+        "secretTokenSecretName": {
+          "type": "string"
+        },
+        "resources": {
+          "$ref": "#/definitions/resources"
+        },
+        "readinessProbe": {
+          "$ref": "#/definitions/probe"
+        },
+        "livenessProbe": {
+          "$ref": "#/definitions/probe"
+        },
+        "mountInstrumentStorage": {
+          "type": "boolean"
+        },
+        "setupProperties": {
+          "type": "string"
+        },
+        "runProperties": {
+          "type": "string"
+        },
+        "synonymTxt": {
+          "type": "string"
+        },
+        "logbackXml": {
+          "type": "string"
+        },
+        "additionalArtifacts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "elasticAPM",
+              "databaseConnector",
+              "idsStorageFile"
+            ]
+          }
+        },
+        "xslt": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/xsltEntry"
+          }
+        },
+        "startupDependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/startupDependency"
+          }
+        },
+        "cacheDir": {
+          "type": "boolean"
+        }
+      }
+    },
+    "instrumentMount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "mountPath",
+        "readOnly",
+        "nfs"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "mountPath": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "nfs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "server",
+            "path",
+            "readOnly"
+          ],
+          "properties": {
+            "server": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            },
+            "readOnly": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  }
+}

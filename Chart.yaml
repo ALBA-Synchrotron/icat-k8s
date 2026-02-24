@@ -1,6 +1,13 @@
 apiVersion: v2
 name: icat-k8s
+version: 1.1.0
 description: A Helm chart for deploying ICAT core components on Kubernetes
 type: application
-version: 0.1.0
-appVersion: "1.26.1"
+keywords:
+  - icat
+  - data-catalogue
+  - open-data
+home: https://github.com/ALBA-Synchrotron/icat-k8s
+maintainers:
+  - name: Rodrigo Cabezas Quirós (MIS section @ ALBA Synchrotron)
+icon: https://public.cells.es/cdn/public/icat/icat-k8s-logo.png

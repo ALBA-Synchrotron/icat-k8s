@@ -3,11 +3,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: {{ $.Values.namespace }}
-  name: icat-core-{{ .name}}-deployment-{{ $.Values.environment }}-{{ $.Release.Name }}
+  namespace: {{ $.Release.Namespace }}
+  name: icat-core-{{ .name}}-deployment-{{ $.Release.Name }}
   labels:
     app: icat
-    env: {{ $.Values.environment }}
     tier: core
     component: {{ .name }}
     release: {{ $.Release.Name }}
@@ -16,7 +15,6 @@ spec:
   selector:
     matchLabels:
       app: icat
-      env: {{ $.Values.environment }}
       tier: core
       component: {{ .name }}
       release: {{ $.Release.Name }}
@@ -28,7 +26,6 @@ spec:
     metadata:
       labels:
         app: icat
-        env: {{ $.Values.environment }}
         tier: core
         component: {{ .name }}
         release: {{ $.Release.Name }}
@@ -37,11 +34,9 @@ spec:
       priorityClassName: {{$.Values.deploymentPriorityClassName}}
       {{- end}}
       initContainers:
-        - name: init-{{ .name }}-{{ $.Values.environment }}-setup
+        - name: init-{{ .name }}-setup
           image: {{ $.Values.images.initContainers.python }}
           env:
-            - name: DASH_PWD
-              value: "Present Working Dilemma"
             - name: TZ
               value: {{ $.Values.timezone }}
             - name: CONTAINER_TYPE
@@ -50,7 +45,7 @@ spec:
             - name: ELASTIC_APM_LOG_SENDING
               value: "{{ $.Values.elasticAPM.apm.apmLogSending }}"
             - name: ELASTIC_APM_ENVIRONMENT
-              value: {{ $.Values.environment }}
+              value: "{{ $.Values.elasticAPM.apm.environment }}"
             - name: ELASTIC_APM_SERVER_URL
               value: {{ $.Values.elasticAPM.apm.serverUrl }}
             - name: APM_SERVICE_NAME
@@ -90,8 +85,12 @@ spec:
             - name: external-xslt
               mountPath: /opt/payara/xslt/
             {{- end }}
+            {{- if .synonymTxt }}
+            - name: synonym-txt
+              mountPath: /opt/payara/deployments/synonym.txt
+            {{- end }}
         {{- if .startupDependencies }}
-        - name: init-{{ $.Values.environment }}-wait-for-dependent-svc-availability
+        - name: init-wait-for-dependent-svc-availability
           image: {{ $.Values.images.initContainers.curl }}
           command:
             - "sh"
@@ -99,7 +98,7 @@ spec:
             - |
               urls="
               {{- range .startupDependencies }}
-              http://icat-core-{{ .name}}-service-{{ $.Values.environment }}-{{ $.Release.Name }}:{{.port}}{{ .path }}
+              http://icat-core-{{ .name}}-service-{{ $.Release.Name }}:{{.port}}{{ .path }}
               {{- end }}
               "
               while true; do
@@ -122,7 +121,7 @@ spec:
 
         {{- end }}
       containers:
-        - name: icat-core-{{ .name}}-{{ $.Values.environment }}
+        - name: icat-core-{{ .name}}
           {{- if eq .containerType "serverFull" }}
           image: {{ $.Values.images.container.serverFull }}
           {{- else }}
@@ -147,7 +146,7 @@ spec:
               {{- if $.Values.elasticAPM.enabled }}
               -javaagent:/opt/payara/libs/elastic-apm-agent.jar \
               -Delastic.apm.service_name={{$.Values.elasticAPM.apm.serviceNamePrefix}}-{{ .name}} \
-              -Delastic.apm.application_packages=es.cells.icat.authn_alba,org.icatproject.authn_anon,org.icatproject.authn_db,org.icatproject.icat_oaipmh,org.icatproject.exposed,org.icatproject.ids \
+              -Delastic.apm.application_packages={{$.Values.elasticAPM.apm.packageNames}} \
               {{- end }}
               -jar /opt/payara/payara-micro.jar \
               --addlibs /opt/payara/libs/ \
@@ -164,8 +163,6 @@ spec:
               /opt/payara/scripts/entrypoint.sh
             {{- end}}
           env:
-            - name: DASH_PWD
-              value: "Present Working Dilemma"
             - name: TZ
               value: {{ $.Values.timezone }}
             {{- if eq .containerType "serverFull" }}
@@ -180,7 +177,7 @@ spec:
             - name: ELASTIC_APM_LOG_SENDING
               value: "{{ $.Values.elasticAPM.apm.apmLogSending }}"
             - name: ELASTIC_APM_ENVIRONMENT
-              value: {{ $.Values.environment }}
+              value: "{{ $.Values.elasticAPM.apm.environment }}"
             - name: ELASTIC_APM_SERVER_URL
               value: {{ $.Values.elasticAPM.apm.serverUrl }}
             - name: APM_SERVICE_NAME
@@ -247,7 +244,7 @@ spec:
         {{- if .setupProperties }}
         - name: setup-properties
           secret:
-            secretName: icat-core-setup-properties-{{ $.Values.environment }}-{{ $.Release.Name }}
+            secretName: icat-core-setup-properties-{{ $.Release.Name }}
             items:
               - key: {{.name}}
                 path: setup.properties
@@ -255,7 +252,7 @@ spec:
         {{- if .runProperties }}
         - name: run-properties
           secret:
-            secretName: icat-core-run-properties-{{ $.Values.environment }}-{{ $.Release.Name }}
+            secretName: icat-core-run-properties-{{ $.Release.Name }}
             items:
               - key: {{.name}}
                 path: run.properties
@@ -263,7 +260,7 @@ spec:
         {{- if .logbackXml }}
         - name: logback-xml
           configMap:
-            name: icat-core-logback-{{ $.Values.environment }}-{{ $.Release.Name }}
+            name: icat-core-logback-{{ $.Release.Name }}
             items:
               - key: {{.name}}
                 path: logback.xml
@@ -271,7 +268,12 @@ spec:
         {{- if .xslt }}
         - name: external-xslt
           configMap:
-            name: icat-core-xslt-{{ $.Values.environment }}-{{ $.Release.Name }}
+            name: icat-core-xslt-{{ $.Release.Name }}
+        {{- end }}
+        {{- if .synonymTxt }}
+        - name: synonym-txt
+          configMap:
+            name: icat-core-synonym-txt-{{ $.Release.Name }}
         {{- end }}
         {{- if .mountInstrumentStorage }}
         {{- range $.Values.instrumentStorage.storageList }}

@@ -28,6 +28,9 @@ match component:
         if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
 
         deploy(files=overwrite_files)
+    case "authn.ldap":
+        if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
+        deploy(files=overwrite_files)
     case "authn.oidc":
         prop_list: list = ["wellKnownUrl", "tokenIssuer", "icatUserClaim"]
         run_props: dict = get_setup_parameters(prop_name, prop_list)
@@ -58,6 +61,21 @@ match component:
                         "Warning: the mechanism defined in run.properties is never used because icatUserPrependMechanism=false and icatUserClaimException=true")
 
         if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
+
+        deploy(files=overwrite_files)
+    case "authn.simple":
+        prop_list: list = ["user.list"]
+        run_props: dict = get_setup_parameters(prop_name, prop_list)
+
+        for i in run_props["user.list"].split():
+            if f"user.{i}.password" not in run_props:
+                sys.exit(f"user.list included {i} but user.{i}.password is not defined")
+
+        if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
+        deploy(files=overwrite_files)
+    case "icat.lucene":
+        if os.path.exists("logback.xml"): overwrite_files.append(["logback.xml", "WEB-INF/classes"])
+        if os.path.exists("logback.xml"): overwrite_files.append(["synonym.txt", "WEB-INF/classes"])
 
         deploy(files=overwrite_files)
     case "icat.oaipmh":

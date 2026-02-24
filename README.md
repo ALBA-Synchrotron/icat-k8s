@@ -1,93 +1,244 @@
-# ICAT k8s
+# ICAT-k8s: Helm chart for ICAT
 
+The ICAT project provides a metadata catalogue and related components to support experimental data management for
+large-scale facilities, linking all aspects of the research lifecycle from proposal through to data and articles
+publication.
 
+More information on ICAT can be found [here](https://icatproject.org/).
 
-## Getting started
+## Introduction
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+This chart bootstraps all ICAT core components deployment on a [Kubernetes](https://kubernetes.io) cluster using
+the [Helm](https://helm.sh) package manager.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+> **Notice**: This Chart is meant to deploy ICAT components that support JakartaEE 10+ and Java 11+ with Payara 6.
+> Deployments of older versions could be achieved through this Chart, but it is not directly supported.
 
-## Add your files
+## Prerequisites
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+- Kubernetes 1.30+
+- Helm 3.17.0+
+- An external MySQL / MariaDB database for ICAT and some of its components.
 
+## Installing the Chart
+
+To install the chart with the release name `my-release`, ideally you should make a copy of the default values file into
+`values-my-release.yaml` and customize th deployment and each component's version and configuration to your needs.
+
+After configuring the values file to your needs, the Chart can be installed as follows:
+
+```console
+helm install my-release icat-k8s -n <<NAMESPACE>> -f values-my-release.yaml
 ```
-cd existing_repo
-git remote add origin https://git.cells.es/mis/icat-projects/icat-k8s.git
-git branch -M master
-git push -uf origin master
+
+Any changes you make afterward to you values file can be applied as follows:
+
+```console
+helm upgrade my-release icat-k8s -n <<NAMESPACE>> -f values-my-release.yaml
 ```
 
-## Integrate with your tools
+> **Tip**: List all releases using `helm list`
 
-- [ ] [Set up project integrations](https://git.cells.es/mis/icat-projects/icat-k8s/-/settings/integrations)
+You can uninstall and completely remove the Chart from your cluster with the following command:
 
-## Collaborate with your team
+```console
+helm uninstall my-release -n <<NAMESPACE>>
+```
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+##### Note: You need to substitute the placeholder
 
-## Test and Deploy
+`<<NAMESPACE>>` with the name of namespace you want the Chart deployed at.
 
-Use the built-in continuous integration in GitLab.
+## Configuration and installation details
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+### Supported ICAT components
 
-***
+Currently, the following ICAT components are supported and have been tested with this chart.
 
-# Editing this README
+| Name         | Versions |
+|--------------|----------|
+| icat.server  | 6.0.0+   |
+| icat.lucene  | 2.0.0+   |
+| icat.oaipmh  | 2.0.0+   |
+| ids.server   | 2.0.0+   |
+| authn.anon   | 3.0.0+   |
+| authn.db     | 3.0.0+   |
+| authn.ldap   | 3.0.0+   |
+| authn.oidc   | 2.0.0+   |
+| authn.simple | 3.0.0+   |
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### Startup dependencies
 
-## Suggestions for a good README
+The core components of ICAT need to be deployed in a certain order as some depend on others for stating up. This Chart
+takes care of this aspect by making sure some component's deployment does not start before its dependencies. By default
+the chart applies the following criteria:
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+- Authentication plugins: No dependencies on start.
+- ICAT server: Waits for authentication plugins to be up and running.
+- OAIPMH module and IDS server: Depend on icat.server.
 
-## Name
-Choose a self-explaining name for your project.
+Startup dependencies for any additional component you may add can be added by indicating the component's key and the
+URL and port against which to test the availability.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```yaml
+startupDependencies:
+  - name: "icat-server"
+    path: "/icat/version/"
+    port: 8080
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### Setup scripts and init-containers
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+The Chart leverages [init-containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) and a couple
+of Python scripts to perform the artifact retrieval and configuration for each component prior their start.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+Each deployed component will deploy two init-containers:
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+1. Retrieve component and required libraries artifacts for the application, and run setup script.
+2. After the setup script has run, wait for startup dependencies to become available.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### Elastic APM integration
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+All deployed components can be monitoring with [Elastic](https://www.elastic.co/docs/reference/apm/agents/java) if the
+option is enabled. If enabled, an APM agent is deployed alongside each component which forwards logs and resource usage
+to your Elastic instance.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### Running own images and artifact repositories
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+By default, the Chart is provided configured to fetch container images, libraries and ICAT's app artifacts from their
+original repositories, that is, Docker Hub, Apache Maven Central and
+[ICAT's official repo](https://repo.icatproject.org/repo/). However, to reduce third-party dependency and mitigate
+supply-chain risks, it is recommended to use your own repositories or at least configure proxied mirrors
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+The Chart gives the option to use specific images and repositories:
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+```yaml
+images:
+  container:
+    micro: "docker.io/payara/micro:6.2025.2-jdk21"
+    serverFull: "docker.io/payara/server-full:6.2025.3-jdk21"
+  initContainers:
+    # Must be image running as root (need to install curl)
+    python: "docker.io/python:3.12.9-bullseye"
+    curl: "docker.io/curlimages/curl:8.13.0"
+  [ ... ]
+artifacts:
+  rootRepositoryURL: "https://repo.maven.apache.org/maven2"
+  databaseConnector:
+    artifactPath: "/org/mariadb/jdbc/mariadb-java-client/3.5.2/mariadb-java-client-3.5.2.jar"
+    filename: "mariadb-java-client.jar"
+    type: "lib"
+    #repositoryURL: "https://youcanoverridethisifyouwant.nice"
+  elasticAPM:
+    artifactPath: "/co/elastic/apm/elastic-apm-agent/1.50.0/elastic-apm-agent-1.50.0.jar"
+    filename: "elastic-apm-agent.jar"
+    type: "lib"
+    #repositoryURL: "https://youcanoverridethisifyouwant.nice"
+  [ ... ]
+```
+
+## Parameters
+
+### Ingress parameters
+
+| Name                       | Description                                                 | Default value |
+|----------------------------|-------------------------------------------------------------|---------------|
+| `ingress.enabled`          | Deploy Ingress for ICAT with the Chart.                     | `false`       |
+| `ingress.host`             | FQDN to use as the ingress' host.                           |               |
+| `ingress.ingressClassName` | Name of an IngressClass cluster resource.                   |               |
+| `ingress.tlsSecretName`    | Name of the Secret containing certificate for enabling TLS. |               |
+
+### Container images parameters
+
+| Name                           | Description                                      | Default value                                 |
+|--------------------------------|--------------------------------------------------|-----------------------------------------------|
+| `images.container.micro`       | Image for running Payara micro containers.       | `docker.io/payara/micro:6.2025.2-jdk21`       |
+| `images.container.serverFull`  | Image for running Payara server-full containers. | `docker.io/payara/server-full:6.2025.3-jdk21` |
+| `images.initContainers.python` | Python image for setup scripts.                  | `docker.io/python:3.12.9-bullseye`            |
+| `images.initContainers.curl`   | curl image used for fetching artifacts..         | `docker.io/curlimages/curl:8.13.0`            |
+
+### Artifacts parameters
+
+| Name                                               | Description                                | Default value                                                                               |
+|----------------------------------------------------|--------------------------------------------|---------------------------------------------------------------------------------------------|
+| `artifacts.rootRepositoryURL`                      | Default repository for fetching artifacts. | `https://repo.maven.apache.org/maven2`                                                      |
+| `artifacts.databaseConnector.artifactPath`         | DB connector's artifact path               | `/org/mariadb/jdbc/mariadb-java-client/3.5.2/mariadb-java-client-3.5.2.jar`                 |
+| `artifacts.databaseConnector.filename`             | Filename of artifact inside container.     | `mariadb-java-client.jar`                                                                   |
+| `artifacts.databaseConnector.type`                 | Artifact type.                             | `lib`                                                                                       |
+| `artifacts.databaseConnector.repositoryURL`        | Repository override for specific artifact. |                                                                                             |
+| `artifacts.elasticAPM.artifactPath`                | ElasticAPM's artifact path                 | `/co/elastic/apm/elastic-apm-agent/1.50.0/elastic-apm-agent-1.50.0.jar`                     |
+| `artifacts.elasticAPM.filename`                    | Filename of artifact inside container.     | `elastic-apm-agent.jar`                                                                     |
+| `artifacts.elasticAPM.type`                        | Artifact type.                             | `lib`                                                                                       |
+| `artifacts.elasticAPM.repositoryURL`               | Repository override for specific artifact. |                                                                                             |
+| `artifacts.idsStorageFile.artifactPath`            | IDS storage file artifact path             | `/org/icatproject/ids.storage_file/1.4.4/ids.storage_file-1.4.4.jar`                        |
+| `artifacts.idsStorageFile.filename`                | Filename of artifact inside container.     | `ids-storage_file.jar`                                                                      |
+| `artifacts.idsStorageFile.type`                    | Artifact type.                             | `lib`                                                                                       |
+| `artifacts.idsStorageFile.repositoryURL`           | Repository override for specific artifact. | `https://repo.icatproject.org/repo/`                                                        |
+| `artifacts.icatProjectComponents.baseArtifactPath` | Base path of ICAT components artifacts.    | `/org/icatproject/`                                                                         |
+| `artifacts.icatProjectComponents.repositoryURL`    | Repository override for ICAT artifacts.    | `https://repo.icatproject.org/repo`                                                         |
+| `artifacts.initScripts.url`                        | URL of setup scripts.                      | `https://raw.githubusercontent.com/ALBA-Synchrotron/icat-k8s/refs/heads/main/setup_scripts` |
+
+### General configuration parameters
+
+| Name                          | Description                                                                                                                | Default value   |
+|-------------------------------|----------------------------------------------------------------------------------------------------------------------------|-----------------|
+| `imagePullSecretName`         | Name of secret with credentials for private image registry.                                                                |                 |
+| `deploymentPriorityClassName` | [Priority classname](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/) for the deployment. |                 |
+| `timezone`                    | Set's TZ in all containers.                                                                                                | `Europe/Madrid` |
+
+### ElasticAPM parameters
+
+| Name                                   | Description                                   | Default value                                                                                                                                           |
+|----------------------------------------|-----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `elasticAPM.enabled`                   | Toggle ElasticAPM integration                 | `false`                                                                                                                                                 |
+| `elasticAPM.agentJarPath`              | Path to APM's jar file inside container.      | `/opt/payara/libs/elastic-apm-agent.jar`                                                                                                                |
+| `elasticAPM.packageNames`              | Package names to monitor.                     | `es.cells.icat.authn_alba,org.icatproject.authn_anon,org.icatproject.authn_db,org.icatproject.icat_oaipmh,org.icatproject.exposed,org.icatproject.ids"` |
+| `elasticAPM.apm.serviceNamePrefix`     | Prefix to add to each component's service.    | `icat-core`                                                                                                                                             |
+| `elasticAPM.apm.apmLogSending`         | Toggle APM log sending feature.               | `true`                                                                                                                                                  |
+| `elasticAPM.apm.secretTokenSecretName` | Name of secret containing APM's secret token. | `elastic-apm-token`                                                                                                                                     |
+| `elasticAPM.apm.environment`           | APM's reporting environment name.             | `test`                                                                                                                                                  |
+
+### ICAT components parameters (`components`)
+
+| Name                     | Description                                                                                                                | Default value |
+|--------------------------|----------------------------------------------------------------------------------------------------------------------------|---------------|
+| `name`                   | Name of component (format e.g.: 'authn-anon')                                                                              |               |
+| `repoKey`                | Name of component in repo (format e.g.: 'authn.anon)                                                                       |               |
+| `version`                | Version of the component.                                                                                                  |               |
+| `replicas`               | Replicas for the component.                                                                                                | 1             |
+| `resources`              | Resource limits and requests for the component.                                                                            |               |
+| `readinessProbe`         | [Readiness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) for the component. |               |
+| `livenessProbe`          | [Liveness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) for the component.  |               |
+| `mountInstrumentStorage` | Toggle instrument's storage mount.                                                                                         |               |
+| `setupProperties`        | Content of `setup.properties` file of the component.                                                                       |               |
+| `runProperties`          | Content of `run.properties` file of the component.                                                                         |               |
+| `addtitionalArtifacts`   | List of additional artifacts required by the component (e.g. db connector).                                                |               |
+| `logbackXml`             | Content of `logback.xml` file of the component.                                                                            |               |
+| `xslt`                   | Content of the XSLT files used by the OAIPMH module. It is a key-value field, each key is the xslt filename.               |               |
+| `startupDependencies`    | Services for which to wait before starting the component.                                                                  |               |
+| `cacheDir`               | Mount directory for cache (only IDS).                                                                                      |               |
+| `synonymTxt`             | Content of `synonym.txt` file for the OAIPMH module.                                                                       |               |
+
+### NFS storage parameters (`instrumentStorage.storageList`)
+
+| Name           | Description                        | Default value |
+|----------------|------------------------------------|---------------|
+| `name`         | Name of the volume.                |               |
+| `mountPath`    | Volume's mount path in container.  |               |
+| `readOnly`     | Toggle volume writting access.     |               |
+| `nfs.server`   | NFS server.                        |               |
+| `nfs.path`     | Path in NFS server.                |               |
+| `nfs.readOnly` | Toggle write access in NFS server. |               |
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Copyright &copy; 2026 ALBA Synchrotron.
+
+Licensed under the GNU General Public License, Version 3.0 (the "License");
+you may not use this file except in compliance with the License.
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

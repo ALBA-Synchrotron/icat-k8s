@@ -1,82 +1,58 @@
-namespace: "icat-core-test"
-environment: "test"
+ingress:
+  enabled: false
+  host: "domain.icat"
+  ingressClassName: "nginx"
+  tlsSecretName: "domain-icat-tls"
 
 images:
-  broker: "registry.cells.es/docker/apache/activemq-artemis:2.40.0"
   container:
-    micro: "registry.cells.es/mis/icat/payara/micro:6.2025.2-jdk21"
-    serverFull: "registry.cells.es/mis/icat/payara/server-full:6.2025.3-jdk21"
+    micro: "docker.io/payara/micro:6.2025.2-jdk21"
+    serverFull: "docker.io/payara/server-full:6.2025.3-jdk21"
   initContainers:
     # Must be image running as root (need to install curl)
-    python: "registry.cells.es/docker/python:3.12.9-bullseye"
-    curl: "registry.cells.es/docker/curlimages/curl:8.13.0"
+    python: "docker.io/python:3.12.9-bullseye"
+    curl: "docker.io/curlimages/curl:8.13.0"
 
-imagePullSecretName: "harbor-registry-key"
+#imagePullSecretName: "private-registry-key-name"
 
 artifacts:
-  rootRepositoryURL: "https://misdockerprod02.cells.es/nexus/repository/icat-alba"
+  rootRepositoryURL: "https://repo.maven.apache.org/maven2"
   databaseConnector:
-    artifactPath: "/org/icatproject/mariadb-java-client/3.5.2/mariadb-java-client-3.5.2.jar"
+    artifactPath: "/org/mariadb/jdbc/mariadb-java-client/3.5.2/mariadb-java-client-3.5.2.jar"
     filename: "mariadb-java-client.jar"
     type: "lib"
     #repositoryURL: "https://youcanoverridethisifyouwant.nice"
-  activeMQRAR:
-    artifactPath: "/org/apache/activemq/activemq-rar/6.1.6/activemq-rar-6.1.6.rar"
-    filename: "activemq-rar.rar"
-    type: "rar"
-    #repositoryURL: "https://youcanoverridethisifyouwant.nice"
   elasticAPM:
-    artifactPath: "/elastic/elastic-apm-agent/1.50.0/elastic-apm-agent-1.50.0.jar"
+    artifactPath: "/co/elastic/apm/elastic-apm-agent/1.50.0/elastic-apm-agent-1.50.0.jar"
     filename: "elastic-apm-agent.jar"
     type: "lib"
     #repositoryURL: "https://youcanoverridethisifyouwant.nice"
   idsStorageFile:
-    artifactPath: "/org/icatproject/ids.storage_file_alba/1.4.4_ALBA/ids.storage_file_alba-1.4.4_ALBA.jar"
-    filename: "ids-storage_file_alba.jar"
+    artifactPath: "/org/icatproject/ids.storage_file/1.4.4/ids.storage_file-1.4.4.jar"
+    filename: "ids-storage_file.jar"
     type: "lib"
+    repositoryURL: "https://repo.icatproject.org/repo/"
   icatProjectComponents:
     baseArtifactPath: "/org/icatproject/"
-    #repositoryURL: "https://youcanoverridethisifyouwant.nice"
+    repositoryURL: "https://repo.icatproject.org/repo/"
   initScripts:
-    url: "https://git.cells.es/mis-devops/icat-public/icat-k8s/-/raw/master/setup_scripts"
+    url: "https://raw.githubusercontent.com/ALBA-Synchrotron/icat-k8s/refs/heads/main/setup_scripts"
 
-setupPropertiesSecretName: "icat-core-setup-properties"
-runPropertiesSecretMapName: "icat-core-run-properties"
-oaipmhXSLTConfigMapName: "icat-core-oaipmh-xslt"
-logbackConfigMapName: "icat-core-logback"
-brokerConfigSecretName: "icat-core-broker-config"
 
-deploymentPriorityClassName: "icat-priority"
+#deploymentPriorityClassName: "icat-priority"
 
 timezone: "Europe/Madrid"
 
 elasticAPM:
-  enabled: true
+  enabled: false
   agentJarPath: "/opt/payara/libs/elastic-apm-agent.jar"
   packageNames: "es.cells.icat.authn_alba,org.icatproject.authn_anon,org.icatproject.authn_db,org.icatproject.icat_oaipmh,org.icatproject.exposed,org.icatproject.ids"
   apm:
     serviceNamePrefix: "icat-core"
-    serverUrl: "https://kubeelasticmis.cells.es/apm"
+    serverUrl: "https://icat.server.elastic/apm"
     apmLogSending: true
     secretTokenSecretName: "elastic-apm-token"
-
-broker:
-  enabled: false
-  replicas: 1
-  resources:
-    requests:
-      memory: "1Gi"
-      cpu: "0.5"
-  readinessProbe:
-    tcpSocket:
-      port: 61616
-    failureThreshold: 5
-    periodSeconds: 10
-  livenessProbe:
-    tcpSocket:
-      port: 61616
-    failureThreshold: 5
-    periodSeconds: 10
+    environment: "test"
 
 components:
   # authn.anon -- ANONYMOUS AUTHENTICATION COMPONENT
@@ -85,7 +61,6 @@ components:
     repoKey: "authn.anon"
     version: "3.0.0"
     replicas: 1
-    secretTokenSecretName: "elastic-apm-token"
     resources:
       requests:
         memory: "500Mi"
@@ -101,9 +76,13 @@ components:
         port: 8080
       periodSeconds: 20
     mountInstrumentStorage: false
-    optionalVolumesSecretsAndConfigMapsMounts:
-      - run-properties
-      - setup-properties
+    setupProperties: |
+      secure = false
+      container = Glassfish
+      home = /opt/payara
+      port = 4848
+    runProperties: |
+      #mechanism = anon
     additionalArtifacts:
       - elasticAPM
   # authn.db -- DATABASE AUTHENTICATION COMPONENT
@@ -112,7 +91,6 @@ components:
     repoKey: "authn.db"
     version: "3.0.0"
     replicas: 1
-    secretTokenSecretName: "elastic-apm-token"
     resources:
       requests:
         memory: "500Mi"
@@ -128,10 +106,42 @@ components:
         port: 8080
       periodSeconds: 20
     mountInstrumentStorage: false
-    optionalVolumesSecretsAndConfigMapsMounts:
-      - run-properties
-      - setup-properties
-      - logback
+    setupProperties: |
+      # Glassfish
+      secure = false
+      container = Glassfish
+      home = /opt/payara
+      port = 4848
+
+      # MySQL
+      db.target = mysql
+      db.driver = org.mariadb.jdbc.MariaDbDataSource
+      db.url = jdbc:mariadb:://<<YOUR_DB_HOST>>:3306/\<<YOUR_AUTHN_DB_SCHEMA_NAME>>
+      db.username = <<YOUR_DB_USERNAME>>
+      db.password = <<YOUR_DB_USER_PASSWORD>>
+    runProperties: |
+      # Real comments in this file are marked with '#' whereas commented out lines
+      # are marked with '!'
+
+      # If access to the DB authentication should only be allowed from certain
+      # IP addresses then provide a space separated list of allowed values. These 
+      # take the form of an IPV4 or IPV6 address followed by the number of bits 
+      # (starting from the most significant) to consider.
+      !ip = 130.246.0.0/16   172.16.68.0/24
+
+      # The mechanism label to appear before the user name. This may be omitted.
+      #mechanism = db
+    logbackXml: |
+      <configuration>
+      <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      		<encoder>
+      			<pattern>%date %level [%thread] %C{0} - %msg%n</pattern>
+      		</encoder>
+      	</appender>
+      <root level="INFO">
+      		<appender-ref ref="CONSOLE" />
+      	</root>
+      </configuration>
     additionalArtifacts:
       - elasticAPM
       - databaseConnector
@@ -141,7 +151,6 @@ components:
     repoKey: "authn.oidc"
     version: "2.0.1"
     replicas: 1
-    secretTokenSecretName: "elastic-apm-token"
     resources:
       requests:
         memory: "500Mi"
@@ -157,9 +166,26 @@ components:
         port: 8080
       periodSeconds: 20
     mountInstrumentStorage: false
-    optionalVolumesSecretsAndConfigMapsMounts:
-      - run-properties
-      - setup-properties
+    setupProperties: |
+      secure = false
+      container = Glassfish
+      home = /opt/payara
+      port = 4848
+    runProperties: |
+      # Real comments in this file are marked with '#' whereas commented out lines
+      # are marked with '!'
+
+      # If access to the DB authentication should only be allowed from certain
+      # IP addresses then provide a space separated list of allowed values. These 
+      # take the form of an IPV4 or IPV6 address followed by the number of bits 
+      # (starting from the most significant) to consider.
+      !ip = 130.246.0.0/16   172.16.68.0/24
+
+      # The mechanism label to appear before the user name. This may be omitted.
+      #mechanism = db
+      icatUserClaim=preferred_username
+      wellKnownUrl=https://<<OIDC_PROVIDER_URL>>/.well-known/openid-configuration
+      tokenIssuer=https://<<OIDC_PROVIDER_URL>>
     additionalArtifacts:
       - elasticAPM
   # authn.oaipmh -- OAI-PMH (Open Archive Initiative-Protocol for Metadata Harvesting) COMPONENT
@@ -168,7 +194,6 @@ components:
     repoKey: "icat.oaipmh"
     version: "2.0.1"
     replicas: 1
-    secretTokenSecretName: "elastic-apm-token"
     resources:
       requests:
         memory: "500Mi"
@@ -184,11 +209,149 @@ components:
         port: 8080
       periodSeconds: 20
     mountInstrumentStorage: false
-    optionalVolumesSecretsAndConfigMapsMounts:
-      - run-properties
-      - setup-properties
-      - logback
-      - oaipmh-xslt
+    setupProperties: |
+      # Glassfish
+      secure = false
+      container = Glassfish
+      home = /opt/payara
+      port = 4848
+    runProperties: |
+      # Real comments in this file are marked with '#' whereas commented out lines
+      # are marked with '!'
+
+      # ICAT Client configuration
+      icat.auth = db username <<USERNAME_FOR_OAIPMH>> password <<USER_PASSWORD_FOR_OAIPMH>>
+      
+      icat.url = http://icat-core-icat-server-service-<<RELEASE_NAME>>.<<NAMESPACE>>:8080
+
+      # A human readable name for the repository
+      repositoryName = <<REPOSITORY NAME>>
+
+      # The e-mail address(es) of the repository administrator
+      adminEmails = <<ADMIN_EMAILS>>
+
+      # The base URL of the OAI-PMH interface
+      requestUrl = <<OAIPMH_BASE_URL>>
+
+      # The maximum number of results per page for incomplete responses
+      maxResults = 50
+
+      # The date/time format used when querying ICAT
+      icatDateTimeFormat = yyyy-MM-dd HH:mm:ss Z
+
+      # The time zone used when querying ICAT
+      icatDateTimeZone = Europe/Madrid
+
+      # The metadata formats to be supported: Dublin Core (oai_dc) is required
+      metadataPrefixes = oai_dc oai_datacite
+      !metadataPrefixes = oai_dc
+
+      # The path to the XSLT definition for each metadata format
+      oai_dc.xslt        = /opt/payara/xslt/oai_dc_transformer.xslt
+      oai_datacite.xslt  = /opt/payara/xslt/oai_datacite_transformer.xslt
+
+      # The namespace for each metadata format
+      oai_dc.namespace       = http://www.openarchives.org/OAI/2.0/oai_dc/
+      oai_datacite.namespace = http://schema.datacite.org/oai/oai-1.1/
+
+      # A schema definition for each metadata format
+      oai_dc.schema          = http://www.openarchives.org/OAI/2.0/oai_dc.xsd
+      oai_datacite.schema    = http://schema.datacite.org/oai/oai-1.1/oai.xsd
+
+      # Identifiers for the configuration of metadata to be retrieved from ICAT
+      data.configurations = inv ds
+
+      # The metadata formats to be supported for each data configuration
+      data.inv.metadataPrefixes = oai_dc oai_datacite
+      !data.inv.metadataPrefixes = oai_dc
+
+      # Relevant data objects and properties for each data configuration
+      data.inv.mainObject = Investigation
+
+      data.inv.stringProperties = summary doi title name visitId
+      data.inv.numericProperties = id
+      data.inv.dateProperties = releaseDate startDate endDate
+      data.inv.subPropertyLists = keywords investigationUsers datasets type
+
+      data.inv.keywords.stringProperties = name
+
+      data.inv.type.stringProperties = name
+
+      data.inv.investigationUsers.stringProperties = role
+      data.inv.investigationUsers.subPropertyLists = user
+
+      data.inv.investigationUsers.user.stringProperties = fullName givenName familyName orcidId affiliation
+
+      # DATASETS
+      data.ds.mainObject = Dataset
+      data.ds.metadataPrefixes = oai_dc oai_datacite
+      data.ds.stringProperties = name type
+      data.ds.dateProperties = startdate endDate
+      data.ds.subPropertyLists = investigation sample datafiles
+
+      data.ds.investigation.stringProperties = doi title name
+      data.ds.investigation.numericProperties = id
+      data.ds.investigation.subPropertyLists = investigationUsers
+      data.ds.investigation.investigationUsers.subPropertyLists = user
+      data.ds.investigation.investigationUsers.stringProperties = role
+      data.ds.investigation.investigationUsers.user.stringProperties = fullName givenName familyName orcidId affiliation
+
+      data.ds.sample.stringProperties = name
+      data.ds.datafiles.stringProperties = name
+
+      # A list of sets to be available in the repository (OAI-PMH feature)
+      !sets = exampleSetA exampleSetB exampleSetC
+      sets = ms lifesci spec 
+
+      # A descriptive name for each set
+      !sets.exampleSetA.name = Example Set A
+      !sets.exampleSetB.name = Example Set B
+      !sets.exampleSetC.name = Example Set C
+      sets.ms.name = Materials Science
+      sets.lifesci.name = Life Science
+      sets.spec.name = Spectroscopy
+
+      # The list of relevant data configurations for each set
+      !sets.exampleSetA.configurations = inv stud
+      !sets.exampleSetB.configurations = inv stud
+      !sets.exampleSetC.configurations = inv
+      sets.ms.configurations = inv
+      sets.lifesci.configurations = inv
+      sets.spec.configurations = inv
+
+      # Optional condition of set affiliation per set and data configuration
+      !sets.exampleSetA.condition.inv = a.modTime >= '2018-07-20 08:00:00' AND a.modTime <= '2018-07-30 08:00:00'
+      !sets.exampleSetA.condition.stud = a.modTime <= '2018-07-20 10:00:00'
+      !sets.exampleSetB.condition.inv = kw.name = 'Nickel' OR kw.name = 'Ni'
+      !sets.exampleSetB.condition.stud = kw.name = 'Nickel' OR kw.name = 'Ni'
+
+      # Optional data objects to be joined when retrieving the items of a set
+      !sets.exampleSetB.join.inv = JOIN a.keywords AS kw
+      !sets.exampleSetB.join.stud = JOIN a.studyInvestigations AS si JOIN si.investigation AS i JOIN i.keywords AS kw
+
+      # If set to 'true', metadata won't be transformed into another format
+      !responseDebug = true
+
+      # The URL to an XSLT document to be applied to all XML responses.
+      # Must be hosted on the same server as icat.oaipmh.
+      !responseStyle = /static/oaitohtml.xsl
+    logbackXml: |
+      <configuration>
+      <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      		<encoder>
+      			<pattern>%date %level [%thread] %C{0} - %msg%n</pattern>
+      		</encoder>
+      	</appender>
+      <root level="INFO">
+      		<appender-ref ref="CONSOLE" />
+      	</root>
+      </configuration>
+    xslt:
+      - oai_datacite_transformer.xslt: |
+          <<OAI_DATACITE_XSLT_FILE_CONTENT>>
+
+      - oai_dc_transformer.xslt: |
+          <<OAI_DC_XSLT_FILE_CONTENT>>
     additionalArtifacts:
       - elasticAPM
     startupDependencies:
@@ -201,13 +364,12 @@ components:
     repoKey: "icat.server"
     version: "6.1.0"
     replicas: 1
-    secretTokenSecretName: "elastic-apm-token"
     resources:
       limits:
-        memory: "12Gi"
+        memory: "1Gi"
         cpu: "4.0"
       requests:
-        memory: "6Gi"
+        memory: "1Gi"
         cpu: "1.0"
     readinessProbe:
       httpGet:
@@ -221,10 +383,91 @@ components:
         port: 8080
       periodSeconds: 20
     mountInstrumentStorage: false
-    optionalVolumesSecretsAndConfigMapsMounts:
-      - run-properties
-      - setup-properties
-      - logback
+    setupProperties: |
+      # Glassfish
+      secure = false
+      container = Glassfish
+      home = /opt/payara
+      port = 4848
+
+      # MySQL
+      db.target  = mysql
+      db.driver  = org.mariadb.jdbc.MariaDbDataSource
+      db.url = jdbc:mariadb:://<<DB_HOST>>:3306/\<<ICAT_DB_SCHEMA_NAME>>
+      db.username = <<DB_USERNAME>>
+      db.password = <<DB_PASSWORD>>
+    runProperties: |
+      # Real comments in this file are marked with '#' whereas commented out lines
+      # are marked with '!'
+
+      # The lifetime of a session
+      lifetimeMinutes = 120
+
+      # Provide CRUD access to authz tables
+      rootUserNames = root db/root
+
+      # Restrict total number of entities to return in a search call
+      maxEntities = 30000
+
+      # Maximum ids in a list - this must not exceed 1000 for Oracle
+      maxIdsInQuery = 500
+      # Size of cache to be used when importing data into ICAT
+      importCacheSize = 50
+
+      # Size of cache to be used when exporting data from ICAT
+      exportCacheSize = 50
+
+      # Desired authentication plugin mnemonics
+      authn.list = anon db oidc
+
+      # Parameters for each of the four plugins
+      authn.db.url       = http://icat-core-authn-db-service-<<RELEASE_NAME>>.<<NAMESPACE>>:8080
+
+      authn.oidc.url = http://icat-core-authn-oidc-service-<<RELEASE_NAME>>.<<NAMESPACE>>:8080
+
+      !authn.ldap.url       = https://localhost:8181
+      !authn.ldap.admin    = true
+      !authn.ldap.friendly = Federal Id
+
+      !authn.simple.url       = https://localhost:8181
+
+      authn.anon.url       = http://icat-core-authn-anon-service-<<RELEASE_NAME>>.<<NAMESPACE>>:8080
+      authn.anon.friendly = Anonymous
+
+      # Notification setup
+      notification.list = Dataset Datafile
+      notification.Dataset = CU
+      notification.Datafile = CU
+
+      # Call logging setup
+      log.list = SESSION WRITE READ INFO
+
+      !jms.topicConnectionFactory = jms/CustomConnectionFactory
+
+      !search.engine = 
+      # Lucene
+      #lucene.url = https://localhost:8181
+      #lucene.populateBlockSize = 10000
+      #lucene.directory = ${HOME}/data/icat/lucene
+      #lucene.backlogHandlerIntervalSeconds = 60
+      #lucene.enqueuedRequestIntervalSeconds = 5
+
+      # List members of cluster
+      !cluster = http://vm200.nubes.stfc.ac.uk:8080 https://smfisher:8181
+
+      # Optional key which must match that of the IDS server if the IDS is in use and has a key for digest protection of Datafile.location
+      !key = ???
+    logbackXml: |
+      <configuration>
+      <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      		<encoder>
+      			<pattern>%date %level [%thread] %C{0} - %msg%n</pattern>
+      		</encoder>
+      	</appender>
+      <root level="INFO">
+      		<appender-ref ref="CONSOLE" />
+      	</root>
+      </configuration>
     additionalArtifacts:
       - elasticAPM
       - databaseConnector
@@ -244,13 +487,12 @@ components:
     repoKey: "ids.server"
     version: "2.1.1"
     replicas: 1
-    secretTokenSecretName: "elastic-apm-token"
     resources:
       limits:
-        memory: "12Gi"
+        memory: "1Gi"
         cpu: "4.0"
       requests:
-        memory: "6Gi"
+        memory: "1Gi"
         cpu: "1.0"
     readinessProbe:
       httpGet:
@@ -264,11 +506,64 @@ components:
         port: 8080
       periodSeconds: 20
     mountInstrumentStorage: true
-    optionalVolumesSecretsAndConfigMapsMounts:
-      - run-properties
-      - setup-properties
-      - logback
-      - cache-dir
+    setupProperties: |
+      # Glassfish
+      secure = false
+      container = Glassfish
+      home = /opt/payara
+      port = 4848
+    runProperties: |
+      # General properties
+      icat.url = http://icat-core-icat-server-service-<<RELEASE_NAME>>.<<NAMESPACE>>:8080
+
+      plugin.zipMapper.class = org.icatproject.ids.storage.ZipMapper
+
+      plugin.main.class = org.icatproject.ids.storage.MainFileStorage
+      plugin.main.dir = /beamlines/
+
+      cache.dir = /opt/ids-server/cache/
+      preparedCount = 10000
+      processQueueIntervalSeconds = 5
+      rootUserNames = db/root 
+      sizeCheckIntervalSeconds = 60
+      reader = db username <<READER_USERNAME>> password <<READER_USER_PASSWORD>>
+      maxIdsInQuery = 1000
+      readOnly = true
+
+      # File checking properties
+      !filesCheck.parallelCount = 0
+      #filesCheck.gapSeconds = 5
+      #filesCheck.lastIdFile = /opt/ids/lastIdFile
+      #filesCheck.errorLog = /opt/ids/errorLog
+
+      # Archive plugin stuff
+      storageUnit = dataset
+      #delayDatafileOperationsSeconds = 9990
+      delayDatasetWritesSeconds = 1
+      startArchivingLevel1024bytes = 5000000
+      stopArchivingLevel1024bytes = 4000000
+      enableWrite = false 
+      tidyBlockSize = 99999999
+
+
+      # Link properties
+      linkLifetimeSeconds = 3600
+
+      # JMS Logging
+      log.list = READ WRITE INFO LINK MIGRATE PREPARE
+      !jms.topicConnectionFactory = jms/CustomConnectionFactory
+    logbackXml: |
+      <configuration>
+      <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      		<encoder>
+      			<pattern>%date %level [%thread] %C{0} - %msg%n</pattern>
+      		</encoder>
+      	</appender>
+      <root level="INFO">
+      		<appender-ref ref="CONSOLE" />
+      	</root>
+      </configuration>
+    cacheDir: true
     additionalArtifacts:
       - elasticAPM
       - idsStorageFile
@@ -278,75 +573,11 @@ components:
         port: 8080
 
 instrumentStorage:
-  #mountPrefix: "/data"
   storageList:
-  - name: bl01 # NCD-SWEET
-    mountPath: /beamlines/bl01
-    readOnly: true
-    nfs:
-      server: beamlines01.cells.es
-      path: /beamlines/bl01
+    - name: bl00
+      mountPath: /data/bl00
       readOnly: true
-  - name: bl11 # MIRAS
-    mountPath: /beamlines/bl11
-    readOnly: true
-    nfs:
-      path: /beamlines/bl11
-      server: beamlines01.cells.es
-      readOnly: true
-  - name: bl20 # LOREA
-    mountPath: /beamlines/bl20
-    readOnly: true
-    nfs:
-      path: /beamlines/bl20
-      server: beamlines02.cells.es
-      readOnly: true
-  - name: bl24 # CIRCE
-    mountPath: /beamlines/bl24
-    readOnly: true
-    nfs:
-      path: /beamlines/bl24
-      server: beamlines02.cells.es
-      readOnly: true
-  - name: bl13 # XALOC
-    mountPath: /beamlines/bl13
-    readOnly: true
-    nfs:
-      path: /beamlines/bl13
-      server: beamlines02.cells.es
-      readOnly: true
-  - name: bl16 # NOTOS
-    mountPath: /beamlines/bl16
-    readOnly: true
-    nfs:
-      path: /beamlines/bl16
-      server: beamlines02.cells.es
-      readOnly: true
-  - name: bl09 # MISTRAL
-    mountPath: /beamlines/bl09
-    readOnly: true
-    nfs:
-      path: /beamlines/bl09
-      server: beamlines01.cells.es
-      readOnly: true
-  - name: bl06 # XAIRA
-    mountPath: /beamlines/bl06
-    readOnly: true
-    nfs:
-      path: /instruments/bl06
-      server: ufs.cells.es
-      readOnly: true
-  - name: bl29 # BOREAS
-    mountPath: /beamlines/bl29
-    readOnly: true
-    nfs:
-      path: /beamlines/bl29
-      server: beamlines02.cells.es
-      readOnly: true
-  - name: bl31 # FAXTOR
-    mountPath: /beamlines/bl31
-    readOnly: true
-    nfs:
-      path: /instruments/bl31
-      server: ufs.cells.es
-      readOnly: true
+      nfs:
+        server: data.nfs.server
+        path: /data/bl00
+        readOnly: true
