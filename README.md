@@ -115,12 +115,12 @@ The Chart gives the option to use specific images and repositories:
 ```yaml
 images:
   container:
-    micro: "docker.io/payara/micro:6.2025.2-jdk21"
-    serverFull: "docker.io/payara/server-full:6.2025.3-jdk21"
+    micro: "docker.io/payara/micro:7.2026.2-jdk25"
+    serverFull: "docker.io/payara/server-full:7.2026.2-jdk25"
   initContainers:
     # Must be image running as root (need to install curl)
     python: "docker.io/python:3.12.9-bullseye"
-    curl: "docker.io/curlimages/curl:8.13.0"
+    curl: "docker.io/curlimages/curl:8.18.0"
   [ ... ]
 artifacts:
   rootRepositoryURL: "https://repo.maven.apache.org/maven2"
@@ -150,12 +150,12 @@ artifacts:
 
 ### Container images parameters
 
-| Name                           | Description                                      | Default value                                 |
-|--------------------------------|--------------------------------------------------|-----------------------------------------------|
-| `images.container.micro`       | Image for running Payara micro containers.       | `docker.io/payara/micro:6.2025.2-jdk21`       |
-| `images.container.serverFull`  | Image for running Payara server-full containers. | `docker.io/payara/server-full:6.2025.3-jdk21` |
-| `images.initContainers.python` | Python image for setup scripts.                  | `docker.io/python:3.12.9-bullseye`            |
-| `images.initContainers.curl`   | curl image used for fetching artifacts..         | `docker.io/curlimages/curl:8.13.0`            |
+| Name                           | Description                                      | Default value                           |
+|--------------------------------|--------------------------------------------------|-----------------------------------------|
+| `images.container.micro`       | Image for running Payara micro containers.       | `docker.io/payara/micro:7.2026.2-jdk25` |
+| `images.container.serverFull`  | Image for running Payara server-full containers. | `docker.io/payara/server-full:7.2026.2-jdk25` |
+| `images.initContainers.python` | Python image for setup scripts.                  | `docker.io/python:3.12.9-bullseye`      |
+| `images.initContainers.curl`   | curl image used for fetching artifacts..         | `docker.io/curlimages/curl:8.18.0`      |
 
 ### Artifacts parameters
 

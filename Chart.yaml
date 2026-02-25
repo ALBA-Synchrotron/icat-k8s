@@ -8,6 +8,9 @@ keywords:
   - data-catalogue
   - open-data
 home: https://github.com/ALBA-Synchrotron/icat-k8s
+sources:
+  - https://github.com/ALBA-Synchrotron/icat-k8s
+icon: https://alba-synchrotron.github.io/icat-k8s/icat-k8s-logo.png
 maintainers:
   - name: Rodrigo Cabezas Quirós (MIS section @ ALBA Synchrotron)
 icon: https://public.cells.es/cdn/public/icat/icat-k8s-logo.png
