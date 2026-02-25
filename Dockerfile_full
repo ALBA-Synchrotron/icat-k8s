@@ -1,4 +1,4 @@
-FROM docker.io/payara/server-full:6.2025.3-jdk21
+FROM docker.io/payara/server-full:7.2026.2-jdk25
 
 ARG NEW_UID=1000
 ARG PRIMARY_GID=1000
