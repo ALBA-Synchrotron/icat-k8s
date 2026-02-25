@@ -5,6 +5,9 @@ large-scale facilities, linking all aspects of the research lifecycle from propo
 publication.
 
 More information on ICAT can be found [here](https://icatproject.org/).
+<p align="center">
+<img src="https://alba-synchrotron.github.io/icat-k8s/icat-k8s-logo.png" alt="icat collaboration logo" width="200">
+</p>
 
 ## Introduction
 
