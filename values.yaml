@@ -6,12 +6,12 @@ ingress:
 
 images:
   container:
-    micro: "docker.io/payara/micro:7.2026.2-jdk25"
-    serverFull: "docker.io/payara/server-full:7.2026.2-jdk25"
+    micro: "docker.io/payara/micro:7.2026.11-jdk25"
+    serverFull: "docker.io/payara/server-full:7.2026.11-jdk25"
   initContainers:
     # Must be image running as root (need to install curl)
-    python: "docker.io/python:3.12.9-bullseye"
-    curl: "docker.io/curlimages/curl:8.18.0"
+    python: "docker.io/python:3.15.2-trixie"
+    curl: "docker.io/curlimages/curl:8.23.0"
 
 #imagePullSecretName: "private-registry-key-name"
 
