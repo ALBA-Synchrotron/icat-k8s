@@ -2,9 +2,9 @@ apiVersion: v1
 entries:
   icat-k8s:
   - apiVersion: v2
-    created: "2026-11-20T06:51:31.464225275Z"
+    created: "2026-11-26T16:08:48.08278675Z"
     description: A Helm chart for deploying ICAT core components on Kubernetes
-    digest: 86c87cc164d61d6bc34d3932c1da3e28dd745747ad1b064db60c158c980acab5
+    digest: 769eb00064df4bc1e2c8bb08d8b89fd70d455547636e96bc74b91029de996e75
     home: https://github.com/ALBA-Synchrotron/icat-k8s
     icon: https://alba-synchrotron.github.io/icat-k8s/icat-k8s-logo.png
     keywords:
@@ -21,7 +21,7 @@ entries:
     - https://alba-synchrotron.github.io/icat-k8s/icat-k8s-1.1.1.tgz
     version: 1.1.1
   - apiVersion: v2
-    created: "2026-11-20T06:51:31.462030747Z"
+    created: "2026-11-26T16:08:48.080833876Z"
     description: A Helm chart for deploying ICAT core components on Kubernetes
     digest: 2a515adb4755cec7e21cbf0e70e42565cd08efe770ba6d523a7bc09dddf60df0
     home: https://github.com/ALBA-Synchrotron/icat-k8s
@@ -39,4 +39,4 @@ entries:
     urls:
     - https://alba-synchrotron.github.io/icat-k8s/icat-k8s-1.1.0.tgz
     version: 1.1.0
-generated: "2026-11-20T06:51:31.459080212Z"
+generated: "2026-11-26T16:08:48.078753488Z"
