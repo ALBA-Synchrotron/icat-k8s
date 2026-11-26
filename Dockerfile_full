@@ -1,4 +1,6 @@
-FROM docker.io/payara/server-full:7.2026.2-jdk25
+FROM amazoncorretto:25 AS jdk
+
+FROM docker.io/payara/server-full:7.2026.9-jdk25
 
 ARG NEW_UID=1000
 ARG PRIMARY_GID=1000
@@ -16,6 +18,10 @@ RUN set -eux; \
         addgroup --gid "$gid" "$group" || true; \
         addgroup badassfish "$group"; \
     done
+
+COPY --from=jdk /usr/lib/jvm/java-25-amazon-corretto /opt/java/corretto25
+ENV JAVA_HOME=/opt/java/corretto25
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Fix permissions
 RUN find / -path /proc -prune -o -user payara -exec chown -R badassfish:badassfish {} \;

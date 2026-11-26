@@ -1,4 +1,6 @@
-FROM docker.io/payara/micro:7.2026.2-jdk25
+FROM amazoncorretto:25-alpine AS jdk
+
+FROM docker.io/payara/micro:7.2026.9-jdk25
 
 ARG NEW_UID=1000
 ARG PRIMARY_GID=1000
@@ -18,6 +20,7 @@ RUN set -eux; \
         addgroup badassfish "$group"; \
     done
 
+COPY --from=jdk /usr/lib/jvm/java-25-amazon-corretto /usr/lib/jvm/zulu25-ca
 
 # Fix permissions
 RUN find / -user payara -exec chown -R badassfish:badassfish {} \;
